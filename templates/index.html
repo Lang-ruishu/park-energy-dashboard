@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>园区能源管理可视化仪表盘</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .header {
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p {
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 5px;
+        }
+        .dashboard {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.1);
+        }
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .card-unit {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-left: 5px;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 0 30px 30px;
+        }
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .chart {
+            height: 350px;
+        }
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏭 园区能源管理可视化仪表盘</h1>
+        <p>实时监控能源消耗、太阳能发电与成本分析</p>
+    </div>
+    
+    <div class="dashboard">
+        <div class="card">
+            <div class="card-icon">⚡</div>
+            <div class="card-title">总能耗</div>
+            <div class="card-value" id="total-consumption">--</div>
+            <span class="card-unit">kWh</span>
+        </div>
+        <div class="card">
+            <div class="card-icon">☀️</div>
+            <div class="card-title">太阳能发电</div>
+            <div class="card-value" id="total-generation">--</div>
+            <span class="card-unit">kWh</span>
+        </div>
+        <div class="card">
+            <div class="card-icon">💰</div>
+            <div class="card-title">总成本</div>
+            <div class="card-value" id="total-cost">--</div>
+            <span class="card-unit">¥</span>
+        </div>
+        <div class="card">
+            <div class="card-icon">📈</div>
+            <div class="card-title">平均效率</div>
+            <div class="card-value" id="avg-efficiency">--</div>
+            <span class="card-unit">%</span>
+        </div>
+    </div>
+    
+    <div class="charts-grid">
+        <div class="chart-container">
+            <div class="chart-title">📊 每日能耗趋势</div>
+            <div class="chart" id="daily-consumption-chart"></div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">🏢 建筑能耗分布</div>
+            <div class="chart" id="building-chart"></div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">☀️ 太阳能发电量</div>
+            <div class="chart" id="solar-chart"></div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">🌡️ 温湿度趋势</div>
+            <div class="chart" id="weather-chart"></div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">💰 能源成本变化</div>
+            <div class="chart" id="cost-chart"></div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">⏰ 小时能耗分布</div>
+            <div class="chart" id="hourly-chart"></div>
+        </div>
+    </div>
+
+    <script>
+        function fetchData(url, callback) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => callback(data))
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function initSummary() {
+            fetchData('/api/summary', (data) => {
+                document.getElementById('total-consumption').textContent = data.total_consumption.toLocaleString();
+                document.getElementById('total-generation').textContent = data.total_generation.toLocaleString();
+                document.getElementById('total-cost').textContent = data.total_cost.toLocaleString();
+                document.getElementById('avg-efficiency').textContent = data.avg_efficiency;
+            });
+        }
+
+        function initDailyConsumptionChart() {
+            fetchData('/api/daily_consumption', (data) => {
+                const chart = echarts.init(document.getElementById('daily-consumption-chart'));
+                const option = {
+                    tooltip: { trigger: 'axis' },
+                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                    xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#999', rotate: 45 } },
+                    yAxis: { type: 'value', axisLabel: { color: '#999' } },
+                    series: [{
+                        name: '能耗',
+                        type: 'line',
+                        smooth: true,
+                        data: data.consumption,
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(0, 212, 255, 0.3)' },
+                                { offset: 1, color: 'rgba(0, 212, 255, 0.05)' }
+                            ])
+                        },
+                        lineStyle: { color: '#00d4ff', width: 3 },
+                        itemStyle: { color: '#00d4ff' }
+                    }]
+                };
+                chart.setOption(option);
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        function initBuildingChart() {
+            fetchData('/api/building_consumption', (data) => {
+                const chart = echarts.init(document.getElementById('building-chart'));
+                const option = {
+                    tooltip: { trigger: 'item', formatter: '{b}: {c} kWh ({d}%)' },
+                    legend: { orient: 'vertical', right: '5%', top: 'center', textStyle: { color: '#999' } },
+                    series: [{
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: { borderRadius: 10, borderColor: 'rgba(255,255,255,0.1)', borderWidth: 2 },
+                        label: { show: false },
+                        emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
+                        labelLine: { show: false },
+                        data: data.buildings.map((name, i) => ({
+                            value: data.consumption[i],
+                            name: name,
+                            itemStyle: { color: ['#00d4ff', '#7c3aed', '#f472b6', '#34d399', '#fbbf24'][i] }
+                        }))
+                    }]
+                };
+                chart.setOption(option);
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        function initSolarChart() {
+            fetchData('/api/solar_generation', (data) => {
+                const chart = echarts.init(document.getElementById('solar-chart'));
+                const option = {
+                    tooltip: { trigger: 'axis' },
+                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                    xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#999', rotate: 45 } },
+                    yAxis: { type: 'value', axisLabel: { color: '#999' } },
+                    series: [{
+                        name: '太阳能发电',
+                        type: 'bar',
+                        data: data.generation,
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#fbbf24' },
+                                { offset: 1, color: '#f59e0b' }
+                            ]),
+                            borderRadius: [4, 4, 0, 0]
+                        }
+                    }]
+                };
+                chart.setOption(option);
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        function initWeatherChart() {
+            fetchData('/api/weather_trend', (data) => {
+                const chart = echarts.init(document.getElementById('weather-chart'));
+                const option = {
+                    tooltip: { trigger: 'axis' },
+                    legend: { data: ['温度', '湿度'], textStyle: { color: '#999' } },
+                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                    xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#999', rotate: 45 } },
+                    yAxis: [{
+                        type: 'value', name: '温度(°C)', axisLabel: { color: '#f472b6', formatter: '{value}°C' }
+                    }, {
+                        type: 'value', name: '湿度(%)', axisLabel: { color: '#60a5fa', formatter: '{value}%' }
+                    }],
+                    series: [{
+                        name: '温度', type: 'line', yAxisIndex: 0, smooth: true,
+                        data: data.temperature, lineStyle: { color: '#f472b6', width: 3 },
+                        itemStyle: { color: '#f472b6' }
+                    }, {
+                        name: '湿度', type: 'line', yAxisIndex: 1, smooth: true,
+                        data: data.humidity, lineStyle: { color: '#60a5fa', width: 3 },
+                        itemStyle: { color: '#60a5fa' }
+                    }]
+                };
+                chart.setOption(option);
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        function initCostChart() {
+            fetchData('/api/energy_cost', (data) => {
+                const chart = echarts.init(document.getElementById('cost-chart'));
+                const option = {
+                    tooltip: { trigger: 'axis' },
+                    legend: { data: ['总成本', '单价'], textStyle: { color: '#999' } },
+                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                    xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#999', rotate: 45 } },
+                    yAxis: [{
+                        type: 'value', name: '成本(¥)', axisLabel: { color: '#34d399' }
+                    }, {
+                        type: 'value', name: '单价(¥/kWh)', axisLabel: { color: '#f87171' }
+                    }],
+                    series: [{
+                        name: '总成本', type: 'bar', yAxisIndex: 0,
+                        data: data.total_cost, itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#34d399' },
+                                { offset: 1, color: '#10b981' }
+                            ]),
+                            borderRadius: [4, 4, 0, 0]
+                        }
+                    }, {
+                        name: '单价', type: 'line', yAxisIndex: 1, smooth: true,
+                        data: data.unit_price, lineStyle: { color: '#f87171', width: 3 },
+                        itemStyle: { color: '#f87171' }
+                    }]
+                };
+                chart.setOption(option);
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        function initHourlyChart() {
+            fetchData('/api/hourly_consumption', (data) => {
+                const chart = echarts.init(document.getElementById('hourly-chart'));
+                const option = {
+                    tooltip: { trigger: 'axis' },
+                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                    xAxis: { type: 'category', data: data.hours, axisLabel: { color: '#999' } },
+                    yAxis: { type: 'value', axisLabel: { color: '#999' } },
+                    series: [{
+                        name: '平均能耗',
+                        type: 'line',
+                        smooth: true,
+                        data: data.consumption,
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(124, 58, 237, 0.3)' },
+                                { offset: 1, color: 'rgba(124, 58, 237, 0.05)' }
+                            ])
+                        },
+                        lineStyle: { color: '#7c3aed', width: 3 },
+                        itemStyle: { color: '#7c3aed' }
+                    }]
+                };
+                chart.setOption(option);
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSummary();
+            initDailyConsumptionChart();
+            initBuildingChart();
+            initSolarChart();
+            initWeatherChart();
+            initCostChart();
+            initHourlyChart();
+        });
+    </script>
+</body>
+</html>
