@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>校园智慧运维可视化大屏</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+        }
+    }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -107,7 +116,7 @@
             position: relative;
             z-index: 1;
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1.2fr 1fr;
             gap: 20px;
             padding: 0 30px 30px;
             height: calc(100vh - 180px);
@@ -136,6 +145,57 @@
         
         .chart-container {
             height: 100%;
+        }
+        
+        /* 3D模型容器 */
+        #model-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, rgba(52, 211, 153, 0.1) 0%, rgba(13, 27, 42, 0.9) 70%);
+        }
+        #model-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .model-hint {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 15px;
+            border-radius: 20px;
+        }
+        .model-title {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+            font-weight: 600;
+            color: #34d399;
+            text-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(13, 27, 42, 0.9);
+            z-index: 10;
+        }
+        .loading-text {
+            font-size: 16px;
+            color: #34d399;
         }
         
         /* 设备告警表格 */
@@ -195,47 +255,23 @@
             border-radius: 3px;
         }
         
-        /* 左侧面板 */
-        .left-column {
+        /* 左右侧布局 */
+        .side-column {
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
-        .left-top {
+        .side-panel {
             flex: 1;
-        }
-        .left-bottom {
-            flex: 1;
-        }
-        
-        /* 中间面板 */
-        .middle-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .middle-top {
-            flex: 1.2;
-        }
-        .middle-bottom {
-            flex: 0.8;
-        }
-        
-        /* 右侧面板 */
-        .right-column {
-            display: flex;
-            flex-direction: column;
         }
         
         @media (max-width: 1400px) {
             .stats-row { grid-template-columns: repeat(3, 1fr); }
             .main-content { grid-template-columns: 1fr 1fr; }
-            .right-column { grid-column: span 2; }
         }
         @media (max-width: 900px) {
             .stats-row { grid-template-columns: repeat(2, 1fr); }
             .main-content { grid-template-columns: 1fr; }
-            .right-column { grid-column: span 1; }
         }
     </style>
 </head>
@@ -291,8 +327,8 @@
     <!-- 主内容区域 -->
     <div class="main-content">
         <!-- 左侧 -->
-        <div class="left-column">
-            <div class="panel left-top">
+        <div class="side-column">
+            <div class="panel side-panel">
                 <div class="panel-header">
                     <span class="panel-title">📈 分时段教室使用率</span>
                 </div>
@@ -300,7 +336,7 @@
                     <div class="chart-container" id="classroom-chart"></div>
                 </div>
             </div>
-            <div class="panel left-bottom">
+            <div class="panel side-panel">
                 <div class="panel-header">
                     <span class="panel-title">🌿 校园环境质量分析</span>
                 </div>
@@ -308,19 +344,7 @@
                     <div class="chart-container" id="environment-chart"></div>
                 </div>
             </div>
-        </div>
-
-        <!-- 中间 -->
-        <div class="middle-column">
-            <div class="panel middle-top">
-                <div class="panel-header">
-                    <span class="panel-title">🏢 各楼栋活跃度排行</span>
-                </div>
-                <div class="panel-body">
-                    <div class="chart-container" id="building-chart"></div>
-                </div>
-            </div>
-            <div class="panel middle-bottom">
+            <div class="panel side-panel">
                 <div class="panel-header">
                     <span class="panel-title">📊 设备状态统计</span>
                 </div>
@@ -330,9 +354,34 @@
             </div>
         </div>
 
+        <!-- 中间 - 3D模型 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">🏢 校园3D模型展示</span>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+                <div id="model-container">
+                    <div class="loading-overlay" id="loading">
+                        <span class="loading-text">模型加载中...</span>
+                    </div>
+                    <div class="model-title">校园全景模型</div>
+                    <canvas id="model-canvas"></canvas>
+                    <div class="model-hint">🖱️ 拖拽旋转 | 滚轮缩放</div>
+                </div>
+            </div>
+        </div>
+
         <!-- 右侧 -->
-        <div class="right-column">
-            <div class="panel">
+        <div class="side-column">
+            <div class="panel side-panel">
+                <div class="panel-header">
+                    <span class="panel-title">🏢 各楼栋活跃度排行</span>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-container" id="building-chart"></div>
+                </div>
+            </div>
+            <div class="panel side-panel">
                 <div class="panel-header">
                     <span class="panel-title">🔧 校园设备告警清单</span>
                 </div>
@@ -341,12 +390,9 @@
                         <table class="alert-table">
                             <thead>
                                 <tr>
-                                    <th>设备名称</th>
-                                    <th>类型</th>
+                                    <th>设备</th>
                                     <th>状态</th>
-                                    <th>异常说明</th>
-                                    <th>位置</th>
-                                    <th>记录时间</th>
+                                    <th>说明</th>
                                 </tr>
                             </thead>
                             <tbody id="alert-table-body">
@@ -393,7 +439,7 @@
                     xAxis: {
                         type: 'category',
                         data: data.time_slots,
-                        axisLabel: { color: '#999', rotate: 30, fontSize: 11 },
+                        axisLabel: { color: '#999', rotate: 30, fontSize: 10 },
                         axisLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.3)' } }
                     },
                     yAxis: {
@@ -413,12 +459,8 @@
                                 { offset: 1, color: 'rgba(52, 211, 153, 0.05)' }
                             ])
                         },
-                        lineStyle: { color: '#34d399', width: 3 },
-                        itemStyle: { color: '#34d399' },
-                        markPoint: {
-                            data: [{ type: 'max', name: '最大值' }, { type: 'min', name: '最小值' }],
-                            itemStyle: { color: '#3b82f6' }
-                        }
+                        lineStyle: { color: '#34d399', width: 2 },
+                        itemStyle: { color: '#34d399' }
                     }]
                 });
                 window.addEventListener('resize', () => chart.resize());
@@ -431,25 +473,22 @@
                 const chart = echarts.init(document.getElementById('environment-chart'));
                 const colorMap = { '优': '#34d399', '良': '#3b82f6', '差': '#f87171' };
                 chart.setOption({
-                    tooltip: { trigger: 'item', formatter: '{b}: {c}个监测点 ({d}%)' },
+                    tooltip: { trigger: 'item', formatter: '{b}: {c}个 ({d}%)' },
                     legend: {
                         orient: 'vertical',
-                        right: '10%',
+                        right: '5%',
                         top: 'center',
-                        textStyle: { color: '#999' }
+                        textStyle: { color: '#999' },
+                        itemWidth: 10,
+                        itemHeight: 10
                     },
                     series: [{
                         type: 'pie',
-                        radius: ['40%', '70%'],
+                        radius: ['35%', '60%'],
                         center: ['40%', '50%'],
                         avoidLabelOverlap: false,
-                        itemStyle: {
-                            borderRadius: 10,
-                            borderColor: 'rgba(52, 211, 153, 0.2)',
-                            borderWidth: 2
-                        },
                         label: { show: false },
-                        emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+                        emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold' } },
                         labelLine: { show: false },
                         data: data.levels.map((level, i) => ({
                             value: data.counts[i],
@@ -472,12 +511,12 @@
                     xAxis: {
                         type: 'category',
                         data: data.buildings,
-                        axisLabel: { color: '#999', rotate: 30, fontSize: 11 },
+                        axisLabel: { color: '#999', rotate: 30, fontSize: 10 },
                         axisLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.3)' } }
                     },
                     yAxis: {
                         type: 'value',
-                        axisLabel: { color: '#999', formatter: '{value}人次' },
+                        axisLabel: { color: '#999', formatter: '{value}' },
                         splitLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.1)' } }
                     },
                     series: [{
@@ -489,7 +528,7 @@
                                 { offset: 0, color: '#34d399' },
                                 { offset: 1, color: '#3b82f6' }
                             ]),
-                            borderRadius: [6, 6, 0, 0]
+                            borderRadius: [4, 4, 0, 0]
                         },
                         barWidth: '50%'
                     }]
@@ -506,7 +545,7 @@
                     tooltip: { trigger: 'item' },
                     series: [{
                         type: 'pie',
-                        radius: ['30%', '60%'],
+                        radius: ['25%', '50%'],
                         center: ['50%', '50%'],
                         data: [
                             { value: data['正常'], name: '正常', itemStyle: { color: '#34d399' } },
@@ -515,16 +554,11 @@
                         ],
                         label: {
                             show: true,
-                            formatter: '{b}: {c}台',
+                            formatter: '{b}\n{c}台',
                             color: '#fff',
-                            fontSize: 12
+                            fontSize: 11
                         },
-                        itemStyle: {
-                            borderRadius: 8,
-                            borderColor: 'rgba(52, 211, 153, 0.2)',
-                            borderWidth: 2
-                        },
-                        emphasis: { label: { fontSize: 14, fontWeight: 'bold' } }
+                        emphasis: { label: { fontSize: 12, fontWeight: 'bold' } }
                     }]
                 });
                 window.addEventListener('resize', () => chart.resize());
@@ -544,14 +578,115 @@
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${alert.device_name}</td>
-                        <td>${alert.device_type}</td>
                         <td><span class="status-badge ${statusClass}">${alert.status}</span></td>
                         <td>${alert.alert_message}</td>
-                        <td>${alert.location}</td>
-                        <td>${alert.record_time}</td>
                     `;
                     tbody.appendChild(row);
                 });
+            });
+        }
+
+        // Three.js 3D模型加载
+        async function init3DModel() {
+            const container = document.getElementById('model-container');
+            const canvas = document.getElementById('model-canvas');
+            
+            // 动态导入Three.js模块
+            const THREE = await import('three');
+            const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+            const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+            
+            // 场景设置
+            const scene = new THREE.Scene();
+            
+            // 相机设置
+            const camera = new THREE.PerspectiveCamera(
+                45,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(5, 5, 5);
+            
+            // 渲染器设置
+            const renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            
+            // 控制器
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 2;
+            controls.maxDistance = 20;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
+            
+            // 光照设置
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            // 添加辅助网格
+            const gridHelper = new THREE.GridHelper(10, 20, 0x34d399, 0x1b263b);
+            gridHelper.position.y = -0.01;
+            scene.add(gridHelper);
+            
+            // 加载GLB模型
+            const loader = new GLTFLoader();
+            loader.load(
+                '/校园模型.glb',
+                (gltf) => {
+                    const model = gltf.scene;
+                    
+                    // 自动调整模型大小和位置
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 3 / maxDim;
+                    model.scale.setScalar(scale);
+                    
+                    model.position.x = -center.x * scale;
+                    model.position.y = -center.y * scale + 0.5;
+                    model.position.z = -center.z * scale;
+                    
+                    scene.add(model);
+                    document.getElementById('loading').style.display = 'none';
+                    console.log('模型加载成功');
+                },
+                (progress) => {
+                    console.log('加载进度:', (progress.loaded / progress.total * 100) + '%');
+                },
+                (error) => {
+                    console.error('模型加载错误:', error);
+                    document.getElementById('loading').querySelector('.loading-text').textContent = '模型加载失败';
+                }
+            );
+            
+            // 动画循环
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            // 窗口大小调整
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
             });
         }
 
@@ -563,6 +698,7 @@
             initBuildingChart();
             initDeviceStatsChart();
             initAlertTable();
+            init3DModel();
             
             // 每30秒刷新数据
             setInterval(() => {

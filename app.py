@@ -1,5 +1,6 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_from_directory
 import pymysql
+import os
 from config import config
 from datetime import datetime
 
@@ -20,6 +21,11 @@ def get_db_connection():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# 提供3D模型文件
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), filename)
 
 # 1. 总览指标API
 @app.route('/api/overview')
