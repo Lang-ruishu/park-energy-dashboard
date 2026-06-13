@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify
-import sqlite3
+import pymysql
 from config import config
 
 app = Flask(__name__)
@@ -7,9 +7,14 @@ app.config.from_object(config['default'])
 
 def get_db_connection():
     config_obj = config['default']
-    conn = sqlite3.connect(config_obj.DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return pymysql.connect(
+        host=config_obj.MYSQL_HOST,
+        user=config_obj.MYSQL_USER,
+        password=config_obj.MYSQL_PASSWORD,
+        db=config_obj.MYSQL_DB,
+        port=config_obj.MYSQL_PORT,
+        cursorclass=pymysql.cursors.DictCursor
+    )
 
 @app.route('/')
 def index():
@@ -31,7 +36,7 @@ def get_daily_consumption():
         conn.close()
         
         data = {
-            'dates': [row['date'] for row in result][::-1],
+            'dates': [row['date'].strftime('%Y-%m-%d') for row in result][::-1],
             'consumption': [float(row['total_consumption']) for row in result][::-1]
         }
         return jsonify(data)
@@ -76,7 +81,7 @@ def get_solar_generation():
         conn.close()
         
         data = {
-            'dates': [row['date'] for row in result][::-1],
+            'dates': [row['date'].strftime('%Y-%m-%d') for row in result][::-1],
             'generation': [float(row['total_generation']) for row in result][::-1]
         }
         return jsonify(data)
@@ -99,7 +104,7 @@ def get_weather_trend():
         conn.close()
         
         data = {
-            'dates': [row['date'] for row in result][::-1],
+            'dates': [row['date'].strftime('%Y-%m-%d') for row in result][::-1],
             'temperature': [float(row['avg_temp']) for row in result][::-1],
             'humidity': [float(row['avg_humidity']) for row in result][::-1]
         }
@@ -122,7 +127,7 @@ def get_energy_cost():
         conn.close()
         
         data = {
-            'dates': [row['date'] for row in result][::-1],
+            'dates': [row['date'].strftime('%Y-%m-%d') for row in result][::-1],
             'total_cost': [float(row['total_cost']) for row in result][::-1],
             'unit_price': [float(row['unit_price']) for row in result][::-1]
         }
@@ -145,7 +150,7 @@ def get_hourly_consumption():
         conn.close()
         
         data = {
-            'hours': [row['time'] for row in result],
+            'hours': [row['time'].strftime('%H:00') for row in result],
             'consumption': [float(row['avg_consumption']) for row in result]
         }
         return jsonify(data)

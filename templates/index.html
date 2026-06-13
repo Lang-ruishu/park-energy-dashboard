@@ -3,200 +3,625 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>园区能源管理可视化仪表盘</title>
+    <title>综合能源数据可视化大屏</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #0a1628 0%, #0d1f35 50%, #0a1628 100%);
             min-height: 100vh;
             color: #fff;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
         }
         .header {
-            padding: 20px 30px;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 1;
+            padding: 15px 30px;
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .header h1 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 600;
             background: linear-gradient(90deg, #00d4ff, #7c3aed);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .header p {
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 5px;
-        }
-        .dashboard {
-            padding: 30px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+        .header-right {
+            display: flex;
+            align-items: center;
             gap: 20px;
-            margin-bottom: 20px;
         }
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .header-time {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .header-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            border: none;
+            border-radius: 20px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.1);
+        .header-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
         }
-        .card-icon {
-            font-size: 32px;
-            margin-bottom: 15px;
+        .stats-row {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            padding: 20px 30px;
         }
-        .card-title {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
-            margin-bottom: 8px;
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
-        .card-value {
-            font-size: 28px;
+        .stat-title {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .stat-value {
+            font-size: 24px;
             font-weight: 700;
             background: linear-gradient(90deg, #00d4ff, #7c3aed);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .card-unit {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-left: 5px;
+        .stat-unit {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
         }
-        .charts-grid {
+        .main-grid {
+            position: relative;
+            z-index: 1;
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 28% 44% 28%;
             gap: 20px;
             padding: 0 30px 30px;
+            height: calc(100vh - 220px);
         }
-        .chart-container {
-            background: rgba(255, 255, 255, 0.05);
+        .panel {
+            background: rgba(0, 20, 40, 0.6);
+            border: 1px solid rgba(0, 212, 255, 0.2);
             border-radius: 16px;
-            padding: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
         }
-        .chart-title {
-            font-size: 16px;
+        .panel-header {
+            padding: 15px 20px;
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.1) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title {
+            font-size: 14px;
             font-weight: 600;
-            margin-bottom: 20px;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .panel-body {
+            padding: 15px;
         }
         .chart {
-            height: 350px;
+            width: 100%;
+            height: 100%;
         }
-        @media (max-width: 1200px) {
-            .dashboard {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
+        .chart-sm {
+            height: 200px;
         }
-        @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
+        .chart-md {
+            height: 250px;
+        }
+        .chart-lg {
+            height: 300px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .data-table th, .data-table td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+        .data-table th {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        .data-table td {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .status-normal {
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
+        }
+        .status-warning {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+        .status-alarm {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+        .alarm-item {
+            padding: 12px 15px;
+            background: rgba(248, 113, 113, 0.1);
+            border-left: 3px solid #f87171;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+        .alarm-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #f87171;
+            margin-bottom: 5px;
+        }
+        .alarm-time {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .middle-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        .center-chart {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+        }
+        .center-3d {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .center-ring {
+            width: 300px;
+            height: 300px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
+            position: relative;
+            animation: rotate 20s linear infinite;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .center-ring::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px solid rgba(124, 58, 237, 0.2);
+            border-radius: 50%;
+        }
+        .center-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .center-number {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .center-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
+        }
+        .ring-item {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .ring-item-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        .ring-item-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .ring-item:nth-child(2) { top: -40px; left: 50%; transform: translateX(-50%); }
+        .ring-item:nth-child(3) { top: 50%; right: -40px; transform: translateY(-50%); }
+        .ring-item:nth-child(4) { bottom: -40px; left: 50%; transform: translateX(-50%); }
+        .ring-item:nth-child(5) { top: 50%; left: -40px; transform: translateY(-50%); }
+        .bottom-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .right-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .indicator-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .indicator-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+        .indicator-info {
+            flex: 1;
+        }
+        .indicator-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .indicator-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🏭 园区能源管理可视化仪表盘</h1>
-        <p>实时监控能源消耗、太阳能发电与成本分析</p>
-    </div>
-    
-    <div class="dashboard">
-        <div class="card">
-            <div class="card-icon">⚡</div>
-            <div class="card-title">总能耗</div>
-            <div class="card-value" id="total-consumption">--</div>
-            <span class="card-unit">kWh</span>
-        </div>
-        <div class="card">
-            <div class="card-icon">☀️</div>
-            <div class="card-title">太阳能发电</div>
-            <div class="card-value" id="total-generation">--</div>
-            <span class="card-unit">kWh</span>
-        </div>
-        <div class="card">
-            <div class="card-icon">💰</div>
-            <div class="card-title">总成本</div>
-            <div class="card-value" id="total-cost">--</div>
-            <span class="card-unit">¥</span>
-        </div>
-        <div class="card">
-            <div class="card-icon">📈</div>
-            <div class="card-title">平均效率</div>
-            <div class="card-value" id="avg-efficiency">--</div>
-            <span class="card-unit">%</span>
+        <h1>🏭 综合能源数据可视化大屏</h1>
+        <div class="header-right">
+            <div class="header-time" id="current-time">2024-01-01 00:00:00</div>
+            <button class="header-btn">主题色</button>
         </div>
     </div>
-    
-    <div class="charts-grid">
-        <div class="chart-container">
-            <div class="chart-title">📊 每日能耗趋势</div>
-            <div class="chart" id="daily-consumption-chart"></div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-title">园区总负荷</div>
+            <div class="stat-value" id="stat-load">--</div>
+            <div class="stat-unit">MW</div>
         </div>
-        <div class="chart-container">
-            <div class="chart-title">🏢 建筑能耗分布</div>
-            <div class="chart" id="building-chart"></div>
+        <div class="stat-card">
+            <div class="stat-title">今日总用电</div>
+            <div class="stat-value" id="stat-electric">--</div>
+            <div class="stat-unit">MWh</div>
         </div>
-        <div class="chart-container">
-            <div class="chart-title">☀️ 太阳能发电量</div>
-            <div class="chart" id="solar-chart"></div>
+        <div class="stat-card">
+            <div class="stat-title">光伏发电量</div>
+            <div class="stat-value" id="stat-solar">--</div>
+            <div class="stat-unit">MWh</div>
         </div>
-        <div class="chart-container">
-            <div class="chart-title">🌡️ 温湿度趋势</div>
-            <div class="chart" id="weather-chart"></div>
+        <div class="stat-card">
+            <div class="stat-title">储能剩余容量</div>
+            <div class="stat-value" id="stat-storage">--</div>
+            <div class="stat-unit">MWh</div>
         </div>
-        <div class="chart-container">
-            <div class="chart-title">💰 能源成本变化</div>
-            <div class="chart" id="cost-chart"></div>
+        <div class="stat-card">
+            <div class="stat-title">综合能效指数</div>
+            <div class="stat-value" id="stat-efficiency">--</div>
+            <div class="stat-unit">分</div>
         </div>
-        <div class="chart-container">
-            <div class="chart-title">⏰ 小时能耗分布</div>
-            <div class="chart" id="hourly-chart"></div>
+        <div class="stat-card">
+            <div class="stat-title">今日碳排放量</div>
+            <div class="stat-value" id="stat-carbon">--</div>
+            <div class="stat-unit">吨CO₂</div>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <div class="left-panel">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">📊 能源结构占比</span>
+                </div>
+                <div class="panel-body">
+                    <div class="chart chart-sm" id="energy-structure-chart"></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">📈 24小时负荷趋势</span>
+                </div>
+                <div class="panel-body">
+                    <div class="chart chart-md" id="hourly-chart"></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">⚙️ 重点设备运行状态</span>
+                </div>
+                <div class="panel-body">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>设备名称</th>
+                                    <th>当前功率</th>
+                                    <th>健康度</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>充电桩集群 C</td><td>0.89 MW</td><td>89%</td><td><span class="status-badge status-normal">运行</span></td></tr>
+                                <tr><td>1# 光伏逆变器</td><td>2.38 MW</td><td>98%</td><td><span class="status-badge status-normal">运行</span></td></tr>
+                                <tr><td>2# 储能变流器</td><td>1.24 MW</td><td>88%</td><td><span class="status-badge status-normal">运行</span></td></tr>
+                                <tr><td>冷水机组 A</td><td>0.76 MW</td><td>72%</td><td><span class="status-badge status-warning">预警</span></td></tr>
+                                <tr><td>综合配电柜</td><td>4.05 MW</td><td>91%</td><td><span class="status-badge status-normal">运行</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="middle-panel">
+            <div class="panel center-chart">
+                <div class="panel-header">
+                    <span class="panel-title">📍 园区能源分布总览</span>
+                </div>
+                <div class="panel-body">
+                    <div class="center-3d">
+                        <div class="center-ring">
+                            <div class="center-value">
+                                <div class="center-number" id="center-total">--</div>
+                                <div class="center-label">综合能耗</div>
+                            </div>
+                            <div class="ring-item">
+                                <div class="ring-item-value" id="ring-grid">--</div>
+                                <div class="ring-item-label">电网购电</div>
+                            </div>
+                            <div class="ring-item">
+                                <div class="ring-item-value" id="ring-solar">--</div>
+                                <div class="ring-item-label">光伏发电</div>
+                            </div>
+                            <div class="ring-item">
+                                <div class="ring-item-value" id="ring-prod">--</div>
+                                <div class="ring-item-label">生产负荷</div>
+                            </div>
+                            <div class="ring-item">
+                                <div class="ring-item-value" id="ring-thermal">--</div>
+                                <div class="ring-item-label">暖通空调</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-cards">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">📉 能源站运行明细</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>站点</th><th>电网购</th><th>热泵</th><th>冷负荷</th><th>储能SOC</th><th>状态</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>东区能源站</td><td>68.8MW</td><td>42.6GJ</td><td>8.8GRT</td><td>74%</td><td><span class="status-badge status-normal">正常</span></td></tr>
+                                    <tr><td>北区能源站</td><td>52.3MW</td><td>36.4GJ</td><td>6.6GRT</td><td>69%</td><td><span class="status-badge status-normal">正常</span></td></tr>
+                                    <tr><td>南区能源站</td><td>47.8MW</td><td>31.7GJ</td><td>4.8GRT</td><td>82%</td><td><span class="status-badge status-warning">关注</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">📊 每日能耗趋势</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="chart chart-sm" id="daily-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">📈 分项能耗排行</span>
+                </div>
+                <div class="panel-body">
+                    <div class="chart chart-sm" id="building-chart"></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">⚠️ 运行告警信息</span>
+                </div>
+                <div class="panel-body">
+                    <div class="alarm-item">
+                        <div class="alarm-title">【中控报警】主变#1 低压侧压力异常</div>
+                        <div class="alarm-time">2024-01-15 10:34:21</div>
+                    </div>
+                    <div class="alarm-item">
+                        <div class="alarm-title">【提示信息】配网B段负荷阈值已达到警戒线</div>
+                        <div class="alarm-time">2024-01-15 09:15:33</div>
+                    </div>
+                    <div class="alarm-item">
+                        <div class="alarm-title">【提示信息】储能B组充放电模式已完成切换</div>
+                        <div class="alarm-time">2024-01-15 08:47:12</div>
+                    </div>
+                </div>
+            </div>
+            <div class="right-bottom">
+                <div class="indicator-card">
+                    <div class="indicator-icon">⚡</div>
+                    <div class="indicator-info">
+                        <div class="indicator-value" id="ind-efficiency">--</div>
+                        <div class="indicator-label">可再生能源消纳率</div>
+                    </div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-icon">🌡️</div>
+                    <div class="indicator-info">
+                        <div class="indicator-value" id="ind-heat">--</div>
+                        <div class="indicator-label">智能热网能效</div>
+                    </div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-icon">💧</div>
+                    <div class="indicator-info">
+                        <div class="indicator-value" id="ind-cool">--</div>
+                        <div class="indicator-label">蓄冰制冷执行率</div>
+                    </div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-icon">🔋</div>
+                    <div class="indicator-info">
+                        <div class="indicator-value" id="ind-battery">--</div>
+                        <div class="indicator-label">储能充放效率</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         function fetchData(url, callback) {
-            fetch(url)
-                .then(response => response.json())
-                .then(data => callback(data))
-                .catch(error => console.error('Error fetching data:', error));
+            fetch(url).then(r => r.json()).then(callback).catch(e => console.error(e));
         }
+
+        function updateTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleString('zh-CN');
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
 
         function initSummary() {
             fetchData('/api/summary', (data) => {
-                document.getElementById('total-consumption').textContent = data.total_consumption.toLocaleString();
-                document.getElementById('total-generation').textContent = data.total_generation.toLocaleString();
-                document.getElementById('total-cost').textContent = data.total_cost.toLocaleString();
-                document.getElementById('avg-efficiency').textContent = data.avg_efficiency;
+                document.getElementById('stat-load').textContent = (data.total_consumption / 1000).toFixed(2);
+                document.getElementById('stat-electric').textContent = (data.total_consumption / 10).toFixed(1);
+                document.getElementById('stat-solar').textContent = (data.total_generation / 10).toFixed(1);
+                document.getElementById('stat-storage').textContent = '72.6';
+                document.getElementById('stat-efficiency').textContent = '92';
+                document.getElementById('stat-carbon').textContent = '82.9';
+                
+                document.getElementById('center-total').textContent = (data.total_consumption / 1000).toFixed(1);
+                document.getElementById('ring-grid').textContent = '24.3 MW';
+                document.getElementById('ring-solar').textContent = '16.8 MW';
+                document.getElementById('ring-prod').textContent = '31.2 MW';
+                document.getElementById('ring-thermal').textContent = '8.5 MW';
+                
+                document.getElementById('ind-efficiency').textContent = '48.9%';
+                document.getElementById('ind-heat').textContent = '88.4%';
+                document.getElementById('ind-cool').textContent = '91.9%';
+                document.getElementById('ind-battery').textContent = '99.9%';
             });
         }
 
-        function initDailyConsumptionChart() {
-            fetchData('/api/daily_consumption', (data) => {
-                const chart = echarts.init(document.getElementById('daily-consumption-chart'));
-                const option = {
-                    tooltip: { trigger: 'axis' },
-                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                    xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#999', rotate: 45 } },
-                    yAxis: { type: 'value', axisLabel: { color: '#999' } },
+        function initEnergyStructureChart() {
+            fetchData('/api/building_consumption', (data) => {
+                const chart = echarts.init(document.getElementById('energy-structure-chart'));
+                chart.setOption({
+                    tooltip: { trigger: 'item', formatter: '{b}: {c} kWh ({d}%)' },
+                    legend: { 
+                        orient: 'vertical', 
+                        right: '5%', 
+                        top: 'center', 
+                        textStyle: { color: '#999', fontSize: 10 } 
+                    },
                     series: [{
-                        name: '能耗',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['35%', '50%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: { 
+                            borderRadius: 8, 
+                            borderColor: 'rgba(0, 212, 255, 0.2)', 
+                            borderWidth: 1 
+                        },
+                        label: { show: false },
+                        emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold' } },
+                        labelLine: { show: false },
+                        data: data.buildings.map((name, i) => ({
+                            value: data.consumption[i],
+                            name: name,
+                            itemStyle: { color: ['#00d4ff', '#7c3aed', '#f472b6', '#34d399', '#fbbf24'][i] }
+                        }))
+                    }]
+                });
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        function initHourlyChart() {
+            fetchData('/api/hourly_consumption', (data) => {
+                const chart = echarts.init(document.getElementById('hourly-chart'));
+                chart.setOption({
+                    tooltip: { trigger: 'axis' },
+                    grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+                    xAxis: { type: 'category', data: data.hours, axisLabel: { color: '#666', fontSize: 10 } },
+                    yAxis: { type: 'value', axisLabel: { color: '#666', fontSize: 10 } },
+                    series: [{
                         type: 'line',
                         smooth: true,
                         data: data.consumption,
@@ -206,11 +631,34 @@
                                 { offset: 1, color: 'rgba(0, 212, 255, 0.05)' }
                             ])
                         },
-                        lineStyle: { color: '#00d4ff', width: 3 },
+                        lineStyle: { color: '#00d4ff', width: 2 },
                         itemStyle: { color: '#00d4ff' }
                     }]
-                };
-                chart.setOption(option);
+                });
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        function initDailyChart() {
+            fetchData('/api/daily_consumption', (data) => {
+                const chart = echarts.init(document.getElementById('daily-chart'));
+                chart.setOption({
+                    tooltip: { trigger: 'axis' },
+                    grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+                    xAxis: { type: 'category', data: data.dates.slice(-10), axisLabel: { color: '#666', fontSize: 9, rotate: 45 } },
+                    yAxis: { type: 'value', axisLabel: { color: '#666', fontSize: 10 } },
+                    series: [{
+                        type: 'bar',
+                        data: data.consumption.slice(-10),
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#00d4ff' },
+                                { offset: 1, color: '#7c3aed' }
+                            ]),
+                            borderRadius: [4, 4, 0, 0]
+                        }
+                    }]
+                });
                 window.addEventListener('resize', () => chart.resize());
             });
         }
@@ -218,152 +666,37 @@
         function initBuildingChart() {
             fetchData('/api/building_consumption', (data) => {
                 const chart = echarts.init(document.getElementById('building-chart'));
-                const option = {
-                    tooltip: { trigger: 'item', formatter: '{b}: {c} kWh ({d}%)' },
-                    legend: { orient: 'vertical', right: '5%', top: 'center', textStyle: { color: '#999' } },
+                chart.setOption({
+                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                    grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+                    xAxis: { type: 'value', axisLabel: { color: '#666', fontSize: 10 } },
+                    yAxis: { 
+                        type: 'category', 
+                        data: data.buildings.reverse(), 
+                        axisLabel: { color: '#999', fontSize: 10 } 
+                    },
                     series: [{
-                        type: 'pie',
-                        radius: ['40%', '70%'],
-                        avoidLabelOverlap: false,
-                        itemStyle: { borderRadius: 10, borderColor: 'rgba(255,255,255,0.1)', borderWidth: 2 },
-                        label: { show: false },
-                        emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
-                        labelLine: { show: false },
-                        data: data.buildings.map((name, i) => ({
-                            value: data.consumption[i],
-                            name: name,
-                            itemStyle: { color: ['#00d4ff', '#7c3aed', '#f472b6', '#34d399', '#fbbf24'][i] }
-                        }))
-                    }]
-                };
-                chart.setOption(option);
-                window.addEventListener('resize', () => chart.resize());
-            });
-        }
-
-        function initSolarChart() {
-            fetchData('/api/solar_generation', (data) => {
-                const chart = echarts.init(document.getElementById('solar-chart'));
-                const option = {
-                    tooltip: { trigger: 'axis' },
-                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                    xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#999', rotate: 45 } },
-                    yAxis: { type: 'value', axisLabel: { color: '#999' } },
-                    series: [{
-                        name: '太阳能发电',
                         type: 'bar',
-                        data: data.generation,
+                        data: data.consumption.reverse(),
                         itemStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                { offset: 0, color: '#fbbf24' },
-                                { offset: 1, color: '#f59e0b' }
+                            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                { offset: 0, color: '#00d4ff' },
+                                { offset: 1, color: '#7c3aed' }
                             ]),
-                            borderRadius: [4, 4, 0, 0]
+                            borderRadius: [0, 4, 4, 0]
                         }
                     }]
-                };
-                chart.setOption(option);
-                window.addEventListener('resize', () => chart.resize());
-            });
-        }
-
-        function initWeatherChart() {
-            fetchData('/api/weather_trend', (data) => {
-                const chart = echarts.init(document.getElementById('weather-chart'));
-                const option = {
-                    tooltip: { trigger: 'axis' },
-                    legend: { data: ['温度', '湿度'], textStyle: { color: '#999' } },
-                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                    xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#999', rotate: 45 } },
-                    yAxis: [{
-                        type: 'value', name: '温度(°C)', axisLabel: { color: '#f472b6', formatter: '{value}°C' }
-                    }, {
-                        type: 'value', name: '湿度(%)', axisLabel: { color: '#60a5fa', formatter: '{value}%' }
-                    }],
-                    series: [{
-                        name: '温度', type: 'line', yAxisIndex: 0, smooth: true,
-                        data: data.temperature, lineStyle: { color: '#f472b6', width: 3 },
-                        itemStyle: { color: '#f472b6' }
-                    }, {
-                        name: '湿度', type: 'line', yAxisIndex: 1, smooth: true,
-                        data: data.humidity, lineStyle: { color: '#60a5fa', width: 3 },
-                        itemStyle: { color: '#60a5fa' }
-                    }]
-                };
-                chart.setOption(option);
-                window.addEventListener('resize', () => chart.resize());
-            });
-        }
-
-        function initCostChart() {
-            fetchData('/api/energy_cost', (data) => {
-                const chart = echarts.init(document.getElementById('cost-chart'));
-                const option = {
-                    tooltip: { trigger: 'axis' },
-                    legend: { data: ['总成本', '单价'], textStyle: { color: '#999' } },
-                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                    xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#999', rotate: 45 } },
-                    yAxis: [{
-                        type: 'value', name: '成本(¥)', axisLabel: { color: '#34d399' }
-                    }, {
-                        type: 'value', name: '单价(¥/kWh)', axisLabel: { color: '#f87171' }
-                    }],
-                    series: [{
-                        name: '总成本', type: 'bar', yAxisIndex: 0,
-                        data: data.total_cost, itemStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                { offset: 0, color: '#34d399' },
-                                { offset: 1, color: '#10b981' }
-                            ]),
-                            borderRadius: [4, 4, 0, 0]
-                        }
-                    }, {
-                        name: '单价', type: 'line', yAxisIndex: 1, smooth: true,
-                        data: data.unit_price, lineStyle: { color: '#f87171', width: 3 },
-                        itemStyle: { color: '#f87171' }
-                    }]
-                };
-                chart.setOption(option);
-                window.addEventListener('resize', () => chart.resize());
-            });
-        }
-
-        function initHourlyChart() {
-            fetchData('/api/hourly_consumption', (data) => {
-                const chart = echarts.init(document.getElementById('hourly-chart'));
-                const option = {
-                    tooltip: { trigger: 'axis' },
-                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                    xAxis: { type: 'category', data: data.hours, axisLabel: { color: '#999' } },
-                    yAxis: { type: 'value', axisLabel: { color: '#999' } },
-                    series: [{
-                        name: '平均能耗',
-                        type: 'line',
-                        smooth: true,
-                        data: data.consumption,
-                        areaStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                { offset: 0, color: 'rgba(124, 58, 237, 0.3)' },
-                                { offset: 1, color: 'rgba(124, 58, 237, 0.05)' }
-                            ])
-                        },
-                        lineStyle: { color: '#7c3aed', width: 3 },
-                        itemStyle: { color: '#7c3aed' }
-                    }]
-                };
-                chart.setOption(option);
+                });
                 window.addEventListener('resize', () => chart.resize());
             });
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             initSummary();
-            initDailyConsumptionChart();
-            initBuildingChart();
-            initSolarChart();
-            initWeatherChart();
-            initCostChart();
+            initEnergyStructureChart();
             initHourlyChart();
+            initDailyChart();
+            initBuildingChart();
         });
     </script>
 </body>
