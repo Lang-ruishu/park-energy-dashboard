@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify
 import pymysql
 from config import config
+from datetime import datetime
 
 app = Flask(__name__)
 app.config.from_object(config['default'])
@@ -20,170 +21,169 @@ def get_db_connection():
 def index():
     return render_template('index.html')
 
-@app.route('/api/daily_consumption')
-def get_daily_consumption():
+# 1. 总览指标API
+@app.route('/api/overview')
+def get_overview():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT date, SUM(consumption_kwh) as total_consumption
-            FROM energy_consumption
-            GROUP BY date
-            ORDER BY date DESC
-            LIMIT 30
+            SELECT * FROM overview_stats 
+            ORDER BY date DESC LIMIT 1
+        """)
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            data = {
+                'total_electricity': float(result['total_electricity']),
+                'classroom_usage_rate': float(result['classroom_usage_rate']),
+                'avg_temperature': float(result['avg_temperature']),
+                'avg_humidity': float(result['avg_humidity']),
+                'online_devices': int(result['online_devices']),
+                'alert_count': int(result['alert_count']),
+                'date': result['date'].strftime('%Y-%m-%d')
+            }
+        else:
+            data = {
+                'total_electricity': 0,
+                'classroom_usage_rate': 0,
+                'avg_temperature': 0,
+                'avg_humidity': 0,
+                'online_devices': 0,
+                'alert_count': 0,
+                'date': datetime.now().strftime('%Y-%m-%d')
+            }
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 2. 教室使用率API（分时段）
+@app.route('/api/classroom_usage')
+def get_classroom_usage():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT time_slot, usage_rate, total_classrooms, used_classrooms
+            FROM classroom_usage
+            WHERE date = CURDATE()
+            ORDER BY time_slot
         """)
         result = cursor.fetchall()
         conn.close()
         
         data = {
-            'dates': [row['date'].strftime('%Y-%m-%d') for row in result][::-1],
-            'consumption': [float(row['total_consumption']) for row in result][::-1]
+            'time_slots': [row['time_slot'] for row in result],
+            'usage_rates': [float(row['usage_rate']) for row in result],
+            'total_classrooms': [int(row['total_classrooms']) for row in result],
+            'used_classrooms': [int(row['used_classrooms']) for row in result]
         }
         return jsonify(data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/building_consumption')
-def get_building_consumption():
+# 3. 环境质量分析API
+@app.route('/api/environment_quality')
+def get_environment_quality():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT building, SUM(consumption_kwh) as total_consumption
-            FROM energy_consumption
-            GROUP BY building
-            ORDER BY total_consumption DESC
+            SELECT quality_level, count, percentage
+            FROM environment_quality
+            WHERE date = CURDATE()
+            ORDER BY quality_level
         """)
         result = cursor.fetchall()
         conn.close()
         
         data = {
-            'buildings': [row['building'] for row in result],
-            'consumption': [float(row['total_consumption']) for row in result]
+            'levels': [row['quality_level'] for row in result],
+            'counts': [int(row['count']) for row in result],
+            'percentages': [float(row['percentage']) for row in result]
         }
         return jsonify(data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/solar_generation')
-def get_solar_generation():
+# 4. 楼栋活跃度排行API
+@app.route('/api/building_activity')
+def get_building_activity():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT date, SUM(generation_kwh) as total_generation
-            FROM solar_generation
-            GROUP BY date
-            ORDER BY date DESC
-            LIMIT 30
+            SELECT building_name, activity_count
+            FROM building_activity
+            WHERE date = CURDATE()
+            ORDER BY activity_count DESC
         """)
         result = cursor.fetchall()
         conn.close()
         
         data = {
-            'dates': [row['date'].strftime('%Y-%m-%d') for row in result][::-1],
-            'generation': [float(row['total_generation']) for row in result][::-1]
+            'buildings': [row['building_name'] for row in result],
+            'activity_counts': [int(row['activity_count']) for row in result]
         }
         return jsonify(data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/weather_trend')
-def get_weather_trend():
+# 5. 设备告警清单API
+@app.route('/api/device_alerts')
+def get_device_alerts():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT date, AVG(temperature) as avg_temp, AVG(humidity) as avg_humidity
-            FROM weather_data
-            GROUP BY date
-            ORDER BY date DESC
-            LIMIT 30
+            SELECT id, device_name, device_type, status, alert_message, location, record_time
+            FROM device_alert
+            ORDER BY 
+                CASE status 
+                    WHEN '故障' THEN 1 
+                    WHEN '预警' THEN 2 
+                    WHEN '正常' THEN 3 
+                END,
+                record_time DESC
         """)
         result = cursor.fetchall()
         conn.close()
         
         data = {
-            'dates': [row['date'].strftime('%Y-%m-%d') for row in result][::-1],
-            'temperature': [float(row['avg_temp']) for row in result][::-1],
-            'humidity': [float(row['avg_humidity']) for row in result][::-1]
+            'alerts': [{
+                'id': row['id'],
+                'device_name': row['device_name'],
+                'device_type': row['device_type'],
+                'status': row['status'],
+                'alert_message': row['alert_message'] or '-',
+                'location': row['location'],
+                'record_time': row['record_time'].strftime('%Y-%m-%d %H:%M')
+            } for row in result]
         }
         return jsonify(data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/energy_cost')
-def get_energy_cost():
+# 6. 设备状态统计API
+@app.route('/api/device_stats')
+def get_device_stats():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT date, total_cost, unit_price
-            FROM energy_cost
-            ORDER BY date DESC
-            LIMIT 30
+            SELECT status, COUNT(*) as count
+            FROM device_alert
+            GROUP BY status
         """)
         result = cursor.fetchall()
         conn.close()
         
-        data = {
-            'dates': [row['date'].strftime('%Y-%m-%d') for row in result][::-1],
-            'total_cost': [float(row['total_cost']) for row in result][::-1],
-            'unit_price': [float(row['unit_price']) for row in result][::-1]
-        }
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/hourly_consumption')
-def get_hourly_consumption():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT time, AVG(consumption_kwh) as avg_consumption
-            FROM energy_consumption
-            GROUP BY time
-            ORDER BY time
-        """)
-        result = cursor.fetchall()
-        conn.close()
+        stats = {'正常': 0, '预警': 0, '故障': 0}
+        for row in result:
+            stats[row['status']] = int(row['count'])
         
-        data = {
-            'hours': [row['time'].strftime('%H:00') for row in result],
-            'consumption': [float(row['avg_consumption']) for row in result]
-        }
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/summary')
-def get_summary():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT SUM(consumption_kwh) as total FROM energy_consumption")
-        total_consumption = float(cursor.fetchone()['total'] or 0)
-        
-        cursor.execute("SELECT SUM(generation_kwh) as total FROM solar_generation")
-        total_generation = float(cursor.fetchone()['total'] or 0)
-        
-        cursor.execute("SELECT SUM(total_cost) as total FROM energy_cost")
-        total_cost = float(cursor.fetchone()['total'] or 0)
-        
-        cursor.execute("SELECT AVG(efficiency) as avg FROM solar_generation WHERE efficiency IS NOT NULL")
-        avg_efficiency = float(cursor.fetchone()['avg'] or 0)
-        
-        conn.close()
-        
-        data = {
-            'total_consumption': round(total_consumption, 2),
-            'total_generation': round(total_generation, 2),
-            'total_cost': round(total_cost, 2),
-            'avg_efficiency': round(avg_efficiency, 2)
-        }
-        return jsonify(data)
+        return jsonify(stats)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

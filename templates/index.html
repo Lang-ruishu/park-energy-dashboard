@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>综合能源数据可视化大屏</title>
+    <title>校园智慧运维可视化大屏</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a1628 0%, #0d1f35 50%, #0a1628 100%);
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #0d1b2a 100%);
             min-height: 100vh;
             color: #fff;
             overflow-x: hidden;
@@ -17,58 +17,47 @@
         body::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background-image: 
-                radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 0.03) 0%, transparent 70%);
+                radial-gradient(circle at 20% 80%, rgba(52, 211, 153, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
         .header {
             position: relative;
             z-index: 1;
-            padding: 15px 30px;
-            background: linear-gradient(90deg, rgba(0, 212, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
-            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 20px 30px;
+            background: linear-gradient(90deg, rgba(52, 211, 153, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border-bottom: 2px solid rgba(52, 211, 153, 0.3);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .header h1 {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 600;
-            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            background: linear-gradient(90deg, #34d399, #3b82f6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .header-right {
+        .header-info {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 30px;
         }
         .header-time {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .header-date {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.5);
         }
-        .header-btn {
-            padding: 8px 20px;
-            background: linear-gradient(135deg, #00d4ff, #7c3aed);
-            border: none;
-            border-radius: 20px;
-            color: #fff;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .header-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
-        }
+        
+        /* 顶部数据卡片 */
         .stats-row {
             position: relative;
             z-index: 1;
@@ -78,24 +67,31 @@
             padding: 20px 30px;
         }
         .stat-card {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
-            border: 1px solid rgba(0, 212, 255, 0.2);
+            background: rgba(13, 27, 42, 0.8);
+            border: 1px solid rgba(52, 211, 153, 0.2);
             border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            padding: 20px 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(52, 211, 153, 0.5);
+            box-shadow: 0 5px 20px rgba(52, 211, 153, 0.2);
+        }
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
         }
         .stat-title {
             font-size: 12px;
             color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-bottom: 8px;
         }
         .stat-value {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 700;
-            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            background: linear-gradient(90deg, #34d399, #3b82f6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -103,78 +99,71 @@
         .stat-unit {
             font-size: 12px;
             color: rgba(255, 255, 255, 0.4);
+            margin-top: 5px;
         }
-        .main-grid {
+        
+        /* 主内容区域 */
+        .main-content {
             position: relative;
             z-index: 1;
             display: grid;
-            grid-template-columns: 28% 44% 28%;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
             padding: 0 30px 30px;
-            height: calc(100vh - 220px);
+            height: calc(100vh - 180px);
         }
+        
         .panel {
-            background: rgba(0, 20, 40, 0.6);
-            border: 1px solid rgba(0, 212, 255, 0.2);
+            background: rgba(13, 27, 42, 0.8);
+            border: 1px solid rgba(52, 211, 153, 0.2);
             border-radius: 16px;
-            backdrop-filter: blur(10px);
             overflow: hidden;
         }
         .panel-header {
             padding: 15px 20px;
-            background: linear-gradient(90deg, rgba(0, 212, 255, 0.1) 0%, transparent 100%);
-            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: linear-gradient(90deg, rgba(52, 211, 153, 0.15) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(52, 211, 153, 0.1);
         }
         .panel-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
+            color: #34d399;
         }
         .panel-body {
             padding: 15px;
+            height: calc(100% - 50px);
         }
-        .chart {
-            width: 100%;
+        
+        .chart-container {
             height: 100%;
         }
-        .chart-sm {
-            height: 200px;
-        }
-        .chart-md {
-            height: 250px;
-        }
-        .chart-lg {
-            height: 300px;
-        }
-        .table-container {
-            overflow-x: auto;
-        }
-        .data-table {
+        
+        /* 设备告警表格 */
+        .alert-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 13px;
         }
-        .data-table th, .data-table td {
-            padding: 10px 8px;
+        .alert-table th {
+            padding: 12px 10px;
             text-align: left;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-        }
-        .data-table th {
             color: rgba(255, 255, 255, 0.5);
             font-weight: 600;
-            text-transform: uppercase;
-            font-size: 11px;
+            border-bottom: 1px solid rgba(52, 211, 153, 0.2);
+            background: rgba(52, 211, 153, 0.05);
         }
-        .data-table td {
+        .alert-table td {
+            padding: 10px;
             color: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid rgba(52, 211, 153, 0.1);
+        }
+        .alert-table tr:hover {
+            background: rgba(52, 211, 153, 0.05);
         }
         .status-badge {
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 10px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
             font-weight: 600;
         }
         .status-normal {
@@ -185,360 +174,184 @@
             background: rgba(251, 191, 36, 0.2);
             color: #fbbf24;
         }
-        .status-alarm {
+        .status-error {
             background: rgba(248, 113, 113, 0.2);
             color: #f87171;
         }
-        .alarm-item {
-            padding: 12px 15px;
-            background: rgba(248, 113, 113, 0.1);
-            border-left: 3px solid #f87171;
-            margin-bottom: 10px;
-            border-radius: 0 8px 8px 0;
+        
+        .table-scroll {
+            height: 100%;
+            overflow-y: auto;
         }
-        .alarm-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #f87171;
-            margin-bottom: 5px;
+        .table-scroll::-webkit-scrollbar {
+            width: 6px;
         }
-        .alarm-time {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.4);
+        .table-scroll::-webkit-scrollbar-track {
+            background: rgba(52, 211, 153, 0.1);
+            border-radius: 3px;
         }
-        .middle-panel {
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: rgba(52, 211, 153, 0.3);
+            border-radius: 3px;
+        }
+        
+        /* 左侧面板 */
+        .left-column {
             display: flex;
             flex-direction: column;
+            gap: 20px;
         }
-        .center-chart {
-            flex: 1;
-            position: relative;
-            background: radial-gradient(circle at center, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
-        }
-        .center-3d {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-        }
-        .center-ring {
-            width: 300px;
-            height: 300px;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 50%;
-            position: relative;
-            animation: rotate 20s linear infinite;
-        }
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .center-ring::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            border: 2px solid rgba(124, 58, 237, 0.2);
-            border-radius: 50%;
-        }
-        .center-value {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-        }
-        .center-number {
-            font-size: 48px;
-            font-weight: 700;
-            background: linear-gradient(90deg, #00d4ff, #7c3aed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .center-label {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 5px;
-        }
-        .ring-item {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .ring-item-value {
-            font-size: 18px;
-            font-weight: 700;
-            color: #00d4ff;
-        }
-        .ring-item-label {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.5);
-        }
-        .ring-item:nth-child(2) { top: -40px; left: 50%; transform: translateX(-50%); }
-        .ring-item:nth-child(3) { top: 50%; right: -40px; transform: translateY(-50%); }
-        .ring-item:nth-child(4) { bottom: -40px; left: 50%; transform: translateX(-50%); }
-        .ring-item:nth-child(5) { top: 50%; left: -40px; transform: translateY(-50%); }
-        .bottom-cards {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .right-bottom {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .indicator-card {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .indicator-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #00d4ff, #7c3aed);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-        }
-        .indicator-info {
+        .left-top {
             flex: 1;
         }
-        .indicator-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #fff;
+        .left-bottom {
+            flex: 1;
         }
-        .indicator-label {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
+        
+        /* 中间面板 */
+        .middle-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .middle-top {
+            flex: 1.2;
+        }
+        .middle-bottom {
+            flex: 0.8;
+        }
+        
+        /* 右侧面板 */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (max-width: 1400px) {
+            .stats-row { grid-template-columns: repeat(3, 1fr); }
+            .main-content { grid-template-columns: 1fr 1fr; }
+            .right-column { grid-column: span 2; }
+        }
+        @media (max-width: 900px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .main-content { grid-template-columns: 1fr; }
+            .right-column { grid-column: span 1; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🏭 综合能源数据可视化大屏</h1>
-        <div class="header-right">
-            <div class="header-time" id="current-time">2024-01-01 00:00:00</div>
-            <button class="header-btn">主题色</button>
+        <h1>🏫 校园智慧运维可视化大屏</h1>
+        <div class="header-info">
+            <div class="header-time" id="current-time">--:--:--</div>
+            <div class="header-date" id="current-date">----年--月--日</div>
         </div>
     </div>
 
+    <!-- 顶部数据卡片 -->
     <div class="stats-row">
         <div class="stat-card">
-            <div class="stat-title">园区总负荷</div>
-            <div class="stat-value" id="stat-load">--</div>
-            <div class="stat-unit">MW</div>
+            <div class="stat-icon">⚡</div>
+            <div class="stat-title">当日总用电量</div>
+            <div class="stat-value" id="stat-electricity">--</div>
+            <div class="stat-unit">kWh</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">今日总用电</div>
-            <div class="stat-value" id="stat-electric">--</div>
-            <div class="stat-unit">MWh</div>
+            <div class="stat-icon">📚</div>
+            <div class="stat-title">教室综合使用率</div>
+            <div class="stat-value" id="stat-classroom">--</div>
+            <div class="stat-unit">%</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">光伏发电量</div>
-            <div class="stat-value" id="stat-solar">--</div>
-            <div class="stat-unit">MWh</div>
+            <div class="stat-icon">🌡️</div>
+            <div class="stat-title">校园平均温度</div>
+            <div class="stat-value" id="stat-temp">--</div>
+            <div class="stat-unit">°C</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">储能剩余容量</div>
-            <div class="stat-value" id="stat-storage">--</div>
-            <div class="stat-unit">MWh</div>
+            <div class="stat-icon">💧</div>
+            <div class="stat-title">校园平均湿度</div>
+            <div class="stat-value" id="stat-humidity">--</div>
+            <div class="stat-unit">%</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">综合能效指数</div>
-            <div class="stat-value" id="stat-efficiency">--</div>
-            <div class="stat-unit">分</div>
+            <div class="stat-icon">📡</div>
+            <div class="stat-title">正常在线设备</div>
+            <div class="stat-value" id="stat-devices">--</div>
+            <div class="stat-unit">台</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">今日碳排放量</div>
-            <div class="stat-value" id="stat-carbon">--</div>
-            <div class="stat-unit">吨CO₂</div>
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-title">当日告警数量</div>
+            <div class="stat-value" id="stat-alerts">--</div>
+            <div class="stat-unit">条</div>
         </div>
     </div>
 
-    <div class="main-grid">
-        <div class="left-panel">
-            <div class="panel">
+    <!-- 主内容区域 -->
+    <div class="main-content">
+        <!-- 左侧 -->
+        <div class="left-column">
+            <div class="panel left-top">
                 <div class="panel-header">
-                    <span class="panel-title">📊 能源结构占比</span>
+                    <span class="panel-title">📈 分时段教室使用率</span>
                 </div>
                 <div class="panel-body">
-                    <div class="chart chart-sm" id="energy-structure-chart"></div>
+                    <div class="chart-container" id="classroom-chart"></div>
                 </div>
             </div>
-            <div class="panel">
+            <div class="panel left-bottom">
                 <div class="panel-header">
-                    <span class="panel-title">📈 24小时负荷趋势</span>
+                    <span class="panel-title">🌿 校园环境质量分析</span>
                 </div>
                 <div class="panel-body">
-                    <div class="chart chart-md" id="hourly-chart"></div>
+                    <div class="chart-container" id="environment-chart"></div>
                 </div>
             </div>
-            <div class="panel">
+        </div>
+
+        <!-- 中间 -->
+        <div class="middle-column">
+            <div class="panel middle-top">
                 <div class="panel-header">
-                    <span class="panel-title">⚙️ 重点设备运行状态</span>
+                    <span class="panel-title">🏢 各楼栋活跃度排行</span>
                 </div>
                 <div class="panel-body">
-                    <div class="table-container">
-                        <table class="data-table">
+                    <div class="chart-container" id="building-chart"></div>
+                </div>
+            </div>
+            <div class="panel middle-bottom">
+                <div class="panel-header">
+                    <span class="panel-title">📊 设备状态统计</span>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-container" id="device-stats-chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧 -->
+        <div class="right-column">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">🔧 校园设备告警清单</span>
+                </div>
+                <div class="panel-body">
+                    <div class="table-scroll">
+                        <table class="alert-table">
                             <thead>
                                 <tr>
                                     <th>设备名称</th>
-                                    <th>当前功率</th>
-                                    <th>健康度</th>
+                                    <th>类型</th>
                                     <th>状态</th>
+                                    <th>异常说明</th>
+                                    <th>位置</th>
+                                    <th>记录时间</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr><td>充电桩集群 C</td><td>0.89 MW</td><td>89%</td><td><span class="status-badge status-normal">运行</span></td></tr>
-                                <tr><td>1# 光伏逆变器</td><td>2.38 MW</td><td>98%</td><td><span class="status-badge status-normal">运行</span></td></tr>
-                                <tr><td>2# 储能变流器</td><td>1.24 MW</td><td>88%</td><td><span class="status-badge status-normal">运行</span></td></tr>
-                                <tr><td>冷水机组 A</td><td>0.76 MW</td><td>72%</td><td><span class="status-badge status-warning">预警</span></td></tr>
-                                <tr><td>综合配电柜</td><td>4.05 MW</td><td>91%</td><td><span class="status-badge status-normal">运行</span></td></tr>
+                            <tbody id="alert-table-body">
                             </tbody>
                         </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="middle-panel">
-            <div class="panel center-chart">
-                <div class="panel-header">
-                    <span class="panel-title">📍 园区能源分布总览</span>
-                </div>
-                <div class="panel-body">
-                    <div class="center-3d">
-                        <div class="center-ring">
-                            <div class="center-value">
-                                <div class="center-number" id="center-total">--</div>
-                                <div class="center-label">综合能耗</div>
-                            </div>
-                            <div class="ring-item">
-                                <div class="ring-item-value" id="ring-grid">--</div>
-                                <div class="ring-item-label">电网购电</div>
-                            </div>
-                            <div class="ring-item">
-                                <div class="ring-item-value" id="ring-solar">--</div>
-                                <div class="ring-item-label">光伏发电</div>
-                            </div>
-                            <div class="ring-item">
-                                <div class="ring-item-value" id="ring-prod">--</div>
-                                <div class="ring-item-label">生产负荷</div>
-                            </div>
-                            <div class="ring-item">
-                                <div class="ring-item-value" id="ring-thermal">--</div>
-                                <div class="ring-item-label">暖通空调</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="bottom-cards">
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">📉 能源站运行明细</span>
-                    </div>
-                    <div class="panel-body">
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>站点</th><th>电网购</th><th>热泵</th><th>冷负荷</th><th>储能SOC</th><th>状态</th></tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td>东区能源站</td><td>68.8MW</td><td>42.6GJ</td><td>8.8GRT</td><td>74%</td><td><span class="status-badge status-normal">正常</span></td></tr>
-                                    <tr><td>北区能源站</td><td>52.3MW</td><td>36.4GJ</td><td>6.6GRT</td><td>69%</td><td><span class="status-badge status-normal">正常</span></td></tr>
-                                    <tr><td>南区能源站</td><td>47.8MW</td><td>31.7GJ</td><td>4.8GRT</td><td>82%</td><td><span class="status-badge status-warning">关注</span></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">📊 每日能耗趋势</span>
-                    </div>
-                    <div class="panel-body">
-                        <div class="chart chart-sm" id="daily-chart"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="right-panel">
-            <div class="panel">
-                <div class="panel-header">
-                    <span class="panel-title">📈 分项能耗排行</span>
-                </div>
-                <div class="panel-body">
-                    <div class="chart chart-sm" id="building-chart"></div>
-                </div>
-            </div>
-            <div class="panel">
-                <div class="panel-header">
-                    <span class="panel-title">⚠️ 运行告警信息</span>
-                </div>
-                <div class="panel-body">
-                    <div class="alarm-item">
-                        <div class="alarm-title">【中控报警】主变#1 低压侧压力异常</div>
-                        <div class="alarm-time">2024-01-15 10:34:21</div>
-                    </div>
-                    <div class="alarm-item">
-                        <div class="alarm-title">【提示信息】配网B段负荷阈值已达到警戒线</div>
-                        <div class="alarm-time">2024-01-15 09:15:33</div>
-                    </div>
-                    <div class="alarm-item">
-                        <div class="alarm-title">【提示信息】储能B组充放电模式已完成切换</div>
-                        <div class="alarm-time">2024-01-15 08:47:12</div>
-                    </div>
-                </div>
-            </div>
-            <div class="right-bottom">
-                <div class="indicator-card">
-                    <div class="indicator-icon">⚡</div>
-                    <div class="indicator-info">
-                        <div class="indicator-value" id="ind-efficiency">--</div>
-                        <div class="indicator-label">可再生能源消纳率</div>
-                    </div>
-                </div>
-                <div class="indicator-card">
-                    <div class="indicator-icon">🌡️</div>
-                    <div class="indicator-info">
-                        <div class="indicator-value" id="ind-heat">--</div>
-                        <div class="indicator-label">智能热网能效</div>
-                    </div>
-                </div>
-                <div class="indicator-card">
-                    <div class="indicator-icon">💧</div>
-                    <div class="indicator-info">
-                        <div class="indicator-value" id="ind-cool">--</div>
-                        <div class="indicator-label">蓄冰制冷执行率</div>
-                    </div>
-                </div>
-                <div class="indicator-card">
-                    <div class="indicator-icon">🔋</div>
-                    <div class="indicator-info">
-                        <div class="indicator-value" id="ind-battery">--</div>
-                        <div class="indicator-label">储能充放效率</div>
                     </div>
                 </div>
             </div>
@@ -547,65 +360,101 @@
 
     <script>
         function fetchData(url, callback) {
-            fetch(url).then(r => r.json()).then(callback).catch(e => console.error(e));
+            fetch(url).then(r => r.json()).then(callback).catch(e => console.error('Error:', e));
         }
 
         function updateTime() {
-            document.getElementById('current-time').textContent = new Date().toLocaleString('zh-CN');
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('zh-CN');
+            document.getElementById('current-date').textContent = now.toLocaleDateString('zh-CN', {year: 'numeric', month: 'long', day: 'numeric'});
         }
         setInterval(updateTime, 1000);
         updateTime();
 
-        function initSummary() {
-            fetchData('/api/summary', (data) => {
-                document.getElementById('stat-load').textContent = (data.total_consumption / 1000).toFixed(2);
-                document.getElementById('stat-electric').textContent = (data.total_consumption / 10).toFixed(1);
-                document.getElementById('stat-solar').textContent = (data.total_generation / 10).toFixed(1);
-                document.getElementById('stat-storage').textContent = '72.6';
-                document.getElementById('stat-efficiency').textContent = '92';
-                document.getElementById('stat-carbon').textContent = '82.9';
-                
-                document.getElementById('center-total').textContent = (data.total_consumption / 1000).toFixed(1);
-                document.getElementById('ring-grid').textContent = '24.3 MW';
-                document.getElementById('ring-solar').textContent = '16.8 MW';
-                document.getElementById('ring-prod').textContent = '31.2 MW';
-                document.getElementById('ring-thermal').textContent = '8.5 MW';
-                
-                document.getElementById('ind-efficiency').textContent = '48.9%';
-                document.getElementById('ind-heat').textContent = '88.4%';
-                document.getElementById('ind-cool').textContent = '91.9%';
-                document.getElementById('ind-battery').textContent = '99.9%';
+        // 初始化总览数据
+        function initOverview() {
+            fetchData('/api/overview', (data) => {
+                document.getElementById('stat-electricity').textContent = data.total_electricity.toFixed(0);
+                document.getElementById('stat-classroom').textContent = data.classroom_usage_rate.toFixed(1);
+                document.getElementById('stat-temp').textContent = data.avg_temperature.toFixed(1);
+                document.getElementById('stat-humidity').textContent = data.avg_humidity.toFixed(1);
+                document.getElementById('stat-devices').textContent = data.online_devices;
+                document.getElementById('stat-alerts').textContent = data.alert_count;
             });
         }
 
-        function initEnergyStructureChart() {
-            fetchData('/api/building_consumption', (data) => {
-                const chart = echarts.init(document.getElementById('energy-structure-chart'));
+        // 教室使用率折线图
+        function initClassroomChart() {
+            fetchData('/api/classroom_usage', (data) => {
+                const chart = echarts.init(document.getElementById('classroom-chart'));
                 chart.setOption({
-                    tooltip: { trigger: 'item', formatter: '{b}: {c} kWh ({d}%)' },
-                    legend: { 
-                        orient: 'vertical', 
-                        right: '5%', 
-                        top: 'center', 
-                        textStyle: { color: '#999', fontSize: 10 } 
+                    tooltip: { trigger: 'axis' },
+                    grid: { left: '5%', right: '5%', bottom: '15%', top: '10%', containLabel: true },
+                    xAxis: {
+                        type: 'category',
+                        data: data.time_slots,
+                        axisLabel: { color: '#999', rotate: 30, fontSize: 11 },
+                        axisLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.3)' } }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        max: 100,
+                        axisLabel: { color: '#999', formatter: '{value}%' },
+                        splitLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.1)' } }
+                    },
+                    series: [{
+                        name: '使用率',
+                        type: 'line',
+                        smooth: true,
+                        data: data.usage_rates,
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(52, 211, 153, 0.4)' },
+                                { offset: 1, color: 'rgba(52, 211, 153, 0.05)' }
+                            ])
+                        },
+                        lineStyle: { color: '#34d399', width: 3 },
+                        itemStyle: { color: '#34d399' },
+                        markPoint: {
+                            data: [{ type: 'max', name: '最大值' }, { type: 'min', name: '最小值' }],
+                            itemStyle: { color: '#3b82f6' }
+                        }
+                    }]
+                });
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        // 环境质量饼图
+        function initEnvironmentChart() {
+            fetchData('/api/environment_quality', (data) => {
+                const chart = echarts.init(document.getElementById('environment-chart'));
+                const colorMap = { '优': '#34d399', '良': '#3b82f6', '差': '#f87171' };
+                chart.setOption({
+                    tooltip: { trigger: 'item', formatter: '{b}: {c}个监测点 ({d}%)' },
+                    legend: {
+                        orient: 'vertical',
+                        right: '10%',
+                        top: 'center',
+                        textStyle: { color: '#999' }
                     },
                     series: [{
                         type: 'pie',
                         radius: ['40%', '70%'],
-                        center: ['35%', '50%'],
+                        center: ['40%', '50%'],
                         avoidLabelOverlap: false,
-                        itemStyle: { 
-                            borderRadius: 8, 
-                            borderColor: 'rgba(0, 212, 255, 0.2)', 
-                            borderWidth: 1 
+                        itemStyle: {
+                            borderRadius: 10,
+                            borderColor: 'rgba(52, 211, 153, 0.2)',
+                            borderWidth: 2
                         },
                         label: { show: false },
-                        emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold' } },
+                        emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
                         labelLine: { show: false },
-                        data: data.buildings.map((name, i) => ({
-                            value: data.consumption[i],
-                            name: name,
-                            itemStyle: { color: ['#00d4ff', '#7c3aed', '#f472b6', '#34d399', '#fbbf24'][i] }
+                        data: data.levels.map((level, i) => ({
+                            value: data.counts[i],
+                            name: level,
+                            itemStyle: { color: colorMap[level] }
                         }))
                     }]
                 });
@@ -613,90 +462,113 @@
             });
         }
 
-        function initHourlyChart() {
-            fetchData('/api/hourly_consumption', (data) => {
-                const chart = echarts.init(document.getElementById('hourly-chart'));
-                chart.setOption({
-                    tooltip: { trigger: 'axis' },
-                    grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-                    xAxis: { type: 'category', data: data.hours, axisLabel: { color: '#666', fontSize: 10 } },
-                    yAxis: { type: 'value', axisLabel: { color: '#666', fontSize: 10 } },
-                    series: [{
-                        type: 'line',
-                        smooth: true,
-                        data: data.consumption,
-                        areaStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                { offset: 0, color: 'rgba(0, 212, 255, 0.3)' },
-                                { offset: 1, color: 'rgba(0, 212, 255, 0.05)' }
-                            ])
-                        },
-                        lineStyle: { color: '#00d4ff', width: 2 },
-                        itemStyle: { color: '#00d4ff' }
-                    }]
-                });
-                window.addEventListener('resize', () => chart.resize());
-            });
-        }
-
-        function initDailyChart() {
-            fetchData('/api/daily_consumption', (data) => {
-                const chart = echarts.init(document.getElementById('daily-chart'));
-                chart.setOption({
-                    tooltip: { trigger: 'axis' },
-                    grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-                    xAxis: { type: 'category', data: data.dates.slice(-10), axisLabel: { color: '#666', fontSize: 9, rotate: 45 } },
-                    yAxis: { type: 'value', axisLabel: { color: '#666', fontSize: 10 } },
-                    series: [{
-                        type: 'bar',
-                        data: data.consumption.slice(-10),
-                        itemStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                { offset: 0, color: '#00d4ff' },
-                                { offset: 1, color: '#7c3aed' }
-                            ]),
-                            borderRadius: [4, 4, 0, 0]
-                        }
-                    }]
-                });
-                window.addEventListener('resize', () => chart.resize());
-            });
-        }
-
+        // 楼栋活跃度柱状图
         function initBuildingChart() {
-            fetchData('/api/building_consumption', (data) => {
+            fetchData('/api/building_activity', (data) => {
                 const chart = echarts.init(document.getElementById('building-chart'));
                 chart.setOption({
                     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                    grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-                    xAxis: { type: 'value', axisLabel: { color: '#666', fontSize: 10 } },
-                    yAxis: { 
-                        type: 'category', 
-                        data: data.buildings.reverse(), 
-                        axisLabel: { color: '#999', fontSize: 10 } 
+                    grid: { left: '5%', right: '5%', bottom: '15%', top: '10%', containLabel: true },
+                    xAxis: {
+                        type: 'category',
+                        data: data.buildings,
+                        axisLabel: { color: '#999', rotate: 30, fontSize: 11 },
+                        axisLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.3)' } }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLabel: { color: '#999', formatter: '{value}人次' },
+                        splitLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.1)' } }
                     },
                     series: [{
+                        name: '活跃人次',
                         type: 'bar',
-                        data: data.consumption.reverse(),
+                        data: data.activity_counts,
                         itemStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-                                { offset: 0, color: '#00d4ff' },
-                                { offset: 1, color: '#7c3aed' }
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#34d399' },
+                                { offset: 1, color: '#3b82f6' }
                             ]),
-                            borderRadius: [0, 4, 4, 0]
-                        }
+                            borderRadius: [6, 6, 0, 0]
+                        },
+                        barWidth: '50%'
                     }]
                 });
                 window.addEventListener('resize', () => chart.resize());
             });
         }
 
+        // 设备状态统计图
+        function initDeviceStatsChart() {
+            fetchData('/api/device_stats', (data) => {
+                const chart = echarts.init(document.getElementById('device-stats-chart'));
+                chart.setOption({
+                    tooltip: { trigger: 'item' },
+                    series: [{
+                        type: 'pie',
+                        radius: ['30%', '60%'],
+                        center: ['50%', '50%'],
+                        data: [
+                            { value: data['正常'], name: '正常', itemStyle: { color: '#34d399' } },
+                            { value: data['预警'], name: '预警', itemStyle: { color: '#fbbf24' } },
+                            { value: data['故障'], name: '故障', itemStyle: { color: '#f87171' } }
+                        ],
+                        label: {
+                            show: true,
+                            formatter: '{b}: {c}台',
+                            color: '#fff',
+                            fontSize: 12
+                        },
+                        itemStyle: {
+                            borderRadius: 8,
+                            borderColor: 'rgba(52, 211, 153, 0.2)',
+                            borderWidth: 2
+                        },
+                        emphasis: { label: { fontSize: 14, fontWeight: 'bold' } }
+                    }]
+                });
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        // 设备告警表格
+        function initAlertTable() {
+            fetchData('/api/device_alerts', (data) => {
+                const tbody = document.getElementById('alert-table-body');
+                tbody.innerHTML = '';
+                
+                data.alerts.forEach(alert => {
+                    const statusClass = alert.status === '正常' ? 'status-normal' : 
+                                       alert.status === '预警' ? 'status-warning' : 'status-error';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${alert.device_name}</td>
+                        <td>${alert.device_type}</td>
+                        <td><span class="status-badge ${statusClass}">${alert.status}</span></td>
+                        <td>${alert.alert_message}</td>
+                        <td>${alert.location}</td>
+                        <td>${alert.record_time}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            });
+        }
+
+        // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', () => {
-            initSummary();
-            initEnergyStructureChart();
-            initHourlyChart();
-            initDailyChart();
+            initOverview();
+            initClassroomChart();
+            initEnvironmentChart();
             initBuildingChart();
+            initDeviceStatsChart();
+            initAlertTable();
+            
+            // 每30秒刷新数据
+            setInterval(() => {
+                initOverview();
+                initAlertTable();
+            }, 30000);
         });
     </script>
 </body>
