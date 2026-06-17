@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>校园智慧运维可视化大屏</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-liquidfill@3.1.0/dist/echarts-liquidfill.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
     <script type="importmap">
     {
@@ -18,10 +20,12 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #0d1b2a 100%);
+            background: transparent;
             min-height: 100vh;
-            color: #fff;
+            color: #e9ecef;
             overflow-x: hidden;
+            margin: 0;
+            padding: 0;
         }
         body::before {
             content: '';
@@ -29,37 +33,38 @@
             top: 0; left: 0;
             width: 100%; height: 100%;
             background-image: 
-                radial-gradient(circle at 20% 80%, rgba(52, 211, 153, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
             pointer-events: none;
-            z-index: 0;
+            z-index: 1;
         }
         .header {
             position: relative;
-            z-index: 1;
-            padding: 20px 30px;
-            background: linear-gradient(90deg, rgba(52, 211, 153, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
-            border-bottom: 2px solid rgba(52, 211, 153, 0.3);
+            z-index: 3;
+            padding: 0;
+            background: rgba(10, 20, 40, 0.95);
+            border-bottom: 1px solid rgba(50, 70, 110, 0.5);
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
+            backdrop-filter: blur(10px);
         }
         .header h1 {
-            font-size: 28px;
+            font-size: 48px;
             font-weight: 600;
-            background: linear-gradient(90deg, #34d399, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-family: 'YouYuan', 'Microsoft YaHei', 'SimHei', sans-serif;
+            color: #ffffff;
+            text-align: center;
+            width: 100%;
+            padding: 25px 60px;
+            border-radius: 0;
         }
         .header-info {
-            display: flex;
-            align-items: center;
-            gap: 30px;
+            display: none;
         }
         .header-time {
             font-size: 16px;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.8);
         }
         .header-date {
             font-size: 14px;
@@ -69,133 +74,196 @@
         /* 顶部数据卡片 */
         .stats-row {
             position: relative;
-            z-index: 1;
+            z-index: 3;
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 15px;
-            padding: 20px 30px;
+            gap: 12px;
+            padding: 15px 20px;
+            background: rgba(80, 80, 80, 0.4);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(100, 100, 100, 0.3);
         }
         .stat-card {
-            background: rgba(13, 27, 42, 0.8);
-            border: 1px solid rgba(52, 211, 153, 0.2);
+            background: rgba(128, 110, 95, 0.75);
+            border: 1px solid rgba(150, 130, 110, 0.6);
             border-radius: 12px;
-            padding: 20px 15px;
+            padding: 15px 12px;
             text-align: center;
             transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
         .stat-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(52, 211, 153, 0.5);
-            box-shadow: 0 5px 20px rgba(52, 211, 153, 0.2);
+            transform: translateY(-2px);
+            border-color: rgba(160, 140, 120, 0.7);
+            background: rgba(100, 85, 70, 0.9);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
         .stat-icon {
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 36px;
+            margin-bottom: 8px;
+            color: #e0e0e0;
+        }
+        .stat-card:hover .stat-icon {
+            color: #fff;
         }
         .stat-title {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 8px;
+            font-size: 18px;
+            color: #b0b0b0;
+            margin-bottom: 6px;
+        }
+        .stat-card:hover .stat-title {
+            color: #fff;
         }
         .stat-value {
-            font-size: 26px;
+            font-size: 36px;
             font-weight: 700;
-            background: linear-gradient(90deg, #34d399, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #fff;
+        }
+        .stat-card:hover .stat-value {
+            color: #fff;
         }
         .stat-unit {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 5px;
+            font-size: 18px;
+            color: #909090;
+            margin-top: 4px;
+        }
+        .stat-card:hover .stat-unit {
+            color: #ccc;
         }
         
         /* 主内容区域 */
         .main-content {
             position: relative;
-            z-index: 1;
+            z-index: 2;
             display: grid;
-            grid-template-columns: 1fr 1.2fr 1fr;
-            gap: 20px;
-            padding: 0 30px 30px;
-            height: calc(100vh - 180px);
+            grid-template-columns: 1fr 1.3fr 1fr;
+            gap: 15px;
+            padding: 0 20px 20px;
+            height: calc(100vh - 160px);
         }
         
         .panel {
-            background: rgba(13, 27, 42, 0.8);
-            border: 1px solid rgba(52, 211, 153, 0.2);
+            background: rgba(10, 15, 20, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 16px;
             overflow: hidden;
+            backdrop-filter: blur(10px);
         }
         .panel-header {
-            padding: 15px 20px;
-            background: linear-gradient(90deg, rgba(52, 211, 153, 0.15) 0%, transparent 100%);
-            border-bottom: 1px solid rgba(52, 211, 153, 0.1);
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
         .panel-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
-            color: #34d399;
+            color: rgba(255, 255, 255, 0.9);
         }
         .panel-body {
-            padding: 15px;
-            height: calc(100% - 50px);
+            padding: 12px;
+            height: calc(100% - 40px);
         }
         
         .chart-container {
             height: 100%;
         }
         
-        /* 3D模型容器 */
+        /* 3D模型容器 - 全屏背景 */
         #model-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            background: radial-gradient(ellipse at center, rgba(52, 211, 153, 0.1) 0%, rgba(13, 27, 42, 0.9) 70%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
         }
         #model-canvas {
             width: 100%;
             height: 100%;
         }
-        .model-hint {
+        
+        /* 主内容区域 - 参考图片排版 */
+        .main-content {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            grid-template-rows: 1fr 3fr 2fr;
+            grid-template-areas:
+                "top-left top-center top-right"
+                "left center right"
+                "bottom-left bottom-center bottom-right";
+            gap: 10px;
+            padding: 10px;
+            height: calc(100vh - 160px);
+        }
+        
+        /* 顶部行 */
+        .top-left { grid-area: top-left; }
+        .top-center { grid-area: top-center; }
+        .top-right { grid-area: top-right; }
+        
+        /* 中间行 */
+        .left-column { grid-area: left; }
+        .center-area { grid-area: center; }
+        .right-column { grid-area: right; }
+        
+        /* 底部行 */
+        .bottom-left { grid-area: bottom-left; }
+        .bottom-center { grid-area: bottom-center; }
+        .bottom-right { grid-area: bottom-right; }
+        
+        /* 中央区域 - 完全透明，让3D沙盘完整显示 */
+        .center-area {
+            grid-area: center;
+            position: relative;
+            cursor: grab;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            background: transparent;
+        }
+        .center-area:active {
+            cursor: grabbing;
+        }
+        .center-hint {
             position: absolute;
             bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
-            background: rgba(0, 0, 0, 0.5);
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(10, 15, 20, 0.6);
             padding: 6px 15px;
             border-radius: 20px;
+            z-index: 20;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .model-title {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 18px;
-            font-weight: 600;
-            color: #34d399;
-            text-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
-        }
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        
+        /* 右侧栏 */
+        .right-column {
+            grid-area: right;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(13, 27, 42, 0.9);
-            z-index: 10;
+            flex-direction: column;
+            gap: 10px;
         }
-        .loading-text {
-            font-size: 16px;
-            color: #34d399;
+        
+        /* 底部区域 */
+        .bottom-area {
+            grid-area: bottom;
+            display: flex;
+            gap: 10px;
+        }
+        .bottom-panel {
+            flex: 1;
+        }
+        
+        /* 左右侧边栏 */
+        .side-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         
         /* 设备告警表格 */
@@ -207,41 +275,90 @@
         .alert-table th {
             padding: 12px 10px;
             text-align: left;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.6);
             font-weight: 600;
-            border-bottom: 1px solid rgba(52, 211, 153, 0.2);
-            background: rgba(52, 211, 153, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
         }
         .alert-table td {
             padding: 10px;
-            color: rgba(255, 255, 255, 0.8);
-            border-bottom: 1px solid rgba(52, 211, 153, 0.1);
+            color: rgba(255, 255, 255, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         .alert-table tr:hover {
-            background: rgba(52, 211, 153, 0.05);
+            background: rgba(255, 255, 255, 0.04);
         }
-        .status-badge {
-            padding: 4px 12px;
+        /* 建筑详情弹窗 - 悬停式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            max-height: 350px;
+            background: rgba(15, 20, 30, 0.95);
+            border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 12px;
+            z-index: 100;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(10px);
+            transform: translateY(-10px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .modal-header {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+            background: rgba(59, 130, 246, 0.08);
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+        .modal-body {
+            padding: 12px 15px;
+        }
+        .building-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+        }
+        .info-row.full-width {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .info-label {
             font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+        }
+        .info-value {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
             font-weight: 600;
         }
-        .status-normal {
-            background: rgba(52, 211, 153, 0.2);
-            color: #34d399;
-        }
-        .status-warning {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
-        .status-error {
-            background: rgba(248, 113, 113, 0.2);
-            color: #f87171;
-        }
-        
-        .table-scroll {
-            height: 100%;
-            overflow-y: auto;
+        .info-desc {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.5;
+            margin: 0;
+            text-align: justify;
         }
         .table-scroll::-webkit-scrollbar {
             width: 6px;
@@ -277,7 +394,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🏫 校园智慧运维可视化大屏</h1>
+        <h1>校园智慧运维可视化大屏</h1>
         <div class="header-info">
             <div class="header-time" id="current-time">--:--:--</div>
             <div class="header-date" id="current-date">----年--月--日</div>
@@ -324,81 +441,128 @@
         </div>
     </div>
 
-    <!-- 主内容区域 -->
+    <!-- 主内容区域 - 参考图片排版 -->
     <div class="main-content">
-        <!-- 左侧 -->
-        <div class="side-column">
-            <div class="panel side-panel">
-                <div class="panel-header">
-                    <span class="panel-title">📈 分时段教室使用率</span>
-                </div>
-                <div class="panel-body">
-                    <div class="chart-container" id="classroom-chart"></div>
-                </div>
-            </div>
-            <div class="panel side-panel">
-                <div class="panel-header">
-                    <span class="panel-title">🌿 校园环境质量分析</span>
-                </div>
-                <div class="panel-body">
-                    <div class="chart-container" id="environment-chart"></div>
-                </div>
-            </div>
-            <div class="panel side-panel">
-                <div class="panel-header">
-                    <span class="panel-title">📊 设备状态统计</span>
-                </div>
-                <div class="panel-body">
-                    <div class="chart-container" id="device-stats-chart"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 中间 - 3D模型 -->
-        <div class="panel">
+        <!-- 顶部行 -->
+        <div class="panel top-left">
             <div class="panel-header">
-                <span class="panel-title">🏢 校园3D模型展示</span>
+                <span class="panel-title">📈 校园能耗流向分析</span>
             </div>
-            <div class="panel-body" style="padding: 0;">
-                <div id="model-container">
-                    <div class="loading-overlay" id="loading">
-                        <span class="loading-text">模型加载中...</span>
-                    </div>
-                    <div class="model-title">校园全景模型</div>
-                    <canvas id="model-canvas"></canvas>
-                    <div class="model-hint">🖱️ 拖拽旋转 | 滚轮缩放</div>
+            <div class="panel-body">
+                <div class="chart-container" id="sankey-chart"></div>
+            </div>
+        </div>
+        <div class="panel top-center">
+            <div class="panel-header">
+                <span class="panel-title">🌿 校园环境质量分析</span>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container" id="radar-chart"></div>
+            </div>
+        </div>
+        <div class="panel top-right">
+            <div class="panel-header">
+                <span class="panel-title">📊 设备状态统计</span>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container" id="device-pie-chart"></div>
+            </div>
+        </div>
+
+        <!-- 中间行 -->
+        <div class="panel left-column">
+            <div class="panel-header">
+                <span class="panel-title">🏢 各楼栋活跃度排行</span>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container" id="building-bar-chart"></div>
+            </div>
+        </div>
+        
+        <!-- 中央区域 - 透明，完整显示3D沙盘 -->
+        <div class="center-area" id="center-area">
+            <div class="center-hint">🖱️ 拖拽旋转 | 滚轮缩放</div>
+        </div>
+        
+        <div class="panel right-column">
+            <div class="panel-header">
+                <span class="panel-title">🔧 校园设备告警清单</span>
+            </div>
+            <div class="panel-body">
+                <div class="table-scroll">
+                    <table class="alert-table">
+                        <thead>
+                            <tr>
+                                <th>设备</th>
+                                <th>状态</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alert-table-body">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- 右侧 -->
-        <div class="side-column">
-            <div class="panel side-panel">
-                <div class="panel-header">
-                    <span class="panel-title">🏢 各楼栋活跃度排行</span>
-                </div>
-                <div class="panel-body">
-                    <div class="chart-container" id="building-chart"></div>
-                </div>
+        <!-- 底部行 -->
+        <div class="panel bottom-left">
+            <div class="panel-header">
+                <span class="panel-title">🎯 能耗达成率</span>
             </div>
-            <div class="panel side-panel">
-                <div class="panel-header">
-                    <span class="panel-title">🔧 校园设备告警清单</span>
+            <div class="panel-body">
+                <div class="chart-container" id="liquid-chart"></div>
+            </div>
+        </div>
+        <div class="panel bottom-center">
+            <div class="panel-header">
+                <span class="panel-title">📊 能耗统计指标</span>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container" id="energy-bar-chart"></div>
+            </div>
+        </div>
+        <div class="panel bottom-right">
+            <div class="panel-header">
+                <span class="panel-title">🌡️ 实时监测仪表盘</span>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container" id="gauge-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D模型容器 - 全屏背景 -->
+    <div id="model-container">
+        <canvas id="model-canvas"></canvas>
+    </div>
+
+    <!-- 建筑详情弹窗 -->
+    <div id="building-modal" class="modal-overlay">
+        <div class="modal-header">
+            <h3 id="modal-title"> 建筑详情</h3>
+        </div>
+        <div class="modal-body">
+            <div class="building-info">
+                <div class="info-row">
+                    <span class="info-label">建筑名称</span>
+                    <span class="info-value" id="building-name">-</span>
                 </div>
-                <div class="panel-body">
-                    <div class="table-scroll">
-                        <table class="alert-table">
-                            <thead>
-                                <tr>
-                                    <th>设备</th>
-                                    <th>状态</th>
-                                    <th>说明</th>
-                                </tr>
-                            </thead>
-                            <tbody id="alert-table-body">
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="info-row">
+                    <span class="info-label">建筑类型</span>
+                    <span class="info-value" id="building-type">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">建筑面积</span>
+                    <span class="info-value" id="building-area">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">楼层数</span>
+                    <span class="info-value" id="building-floors">-</span>
+                </div>
+                <div class="info-row full-width">
+                    <span class="info-label">介绍</span>
+                    <p class="info-desc" id="building-desc">-</p>
                 </div>
             </div>
         </div>
@@ -419,146 +583,196 @@
 
         // 初始化总览数据
         function initOverview() {
-            fetchData('/api/overview', (data) => {
-                document.getElementById('stat-electricity').textContent = data.total_electricity.toFixed(0);
-                document.getElementById('stat-classroom').textContent = data.classroom_usage_rate.toFixed(1);
-                document.getElementById('stat-temp').textContent = data.avg_temperature.toFixed(1);
-                document.getElementById('stat-humidity').textContent = data.avg_humidity.toFixed(1);
-                document.getElementById('stat-devices').textContent = data.online_devices;
-                document.getElementById('stat-alerts').textContent = data.alert_count;
-            });
+            Promise.all([
+                fetchData('/api/energy_stat_data?period=day'),
+                fetchData('/api/classroom_usage'),
+                fetchData('/api/env_realtime_data'),
+                fetchData('/api/device_status_overview'),
+                fetchData('/api/alarm_list')
+            ]).then(([energyData, classroomData, envData, deviceData, alarmData]) => {
+                // 总用电量
+                document.getElementById('stat-electricity').textContent = energyData.total_electric.toFixed(0);
+                // 教室综合使用率
+                document.getElementById('stat-classroom').textContent = classroomData.avg_usage_rate.toFixed(1);
+                // 校园平均温度
+                document.getElementById('stat-temp').textContent = envData.avg_temperature.toFixed(1);
+                // 校园平均湿度
+                document.getElementById('stat-humidity').textContent = envData.avg_humidity.toFixed(1);
+                // 正常在线设备
+                document.getElementById('stat-devices').textContent = deviceData.online_devices;
+                // 当日告警数量
+                document.getElementById('stat-alerts').textContent = alarmData.today_count;
+            }).catch(e => console.error('Error:', e));
         }
 
-        // 教室使用率折线图
-        function initClassroomChart() {
-            fetchData('/api/classroom_usage', (data) => {
-                const chart = echarts.init(document.getElementById('classroom-chart'));
-                chart.setOption({
-                    tooltip: { trigger: 'axis' },
-                    grid: { left: '5%', right: '5%', bottom: '15%', top: '10%', containLabel: true },
-                    xAxis: {
-                        type: 'category',
-                        data: data.time_slots,
-                        axisLabel: { color: '#999', rotate: 30, fontSize: 10 },
-                        axisLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.3)' } }
+        // 桑基图 - 校园能耗流向分析
+        function initSankeyChart() {
+            const chart = echarts.init(document.getElementById('sankey-chart'));
+            const data = {
+                nodes: [
+                    { name: '总能耗' },
+                    { name: '教学楼' },
+                    { name: '宿舍楼' },
+                    { name: '图书馆' },
+                    { name: '体育馆' },
+                    { name: '设备用电' },
+                    { name: '照明用电' },
+                    { name: '空调用电' },
+                    { name: '其他用电' }
+                ],
+                links: [
+                    { source: '总能耗', target: '教学楼', value: 3500 },
+                    { source: '总能耗', target: '宿舍楼', value: 5000 },
+                    { source: '总能耗', target: '图书馆', value: 1500 },
+                    { source: '总能耗', target: '体育馆', value: 800 },
+                    { source: '教学楼', target: '设备用电', value: 1500 },
+                    { source: '教学楼', target: '照明用电', value: 1000 },
+                    { source: '教学楼', target: '空调用电', value: 800 },
+                    { source: '教学楼', target: '其他用电', value: 200 },
+                    { source: '宿舍楼', target: '设备用电', value: 800 },
+                    { source: '宿舍楼', target: '照明用电', value: 1200 },
+                    { source: '宿舍楼', target: '空调用电', value: 2500 },
+                    { source: '宿舍楼', target: '其他用电', value: 500 },
+                    { source: '图书馆', target: '设备用电', value: 400 },
+                    { source: '图书馆', target: '照明用电', value: 600 },
+                    { source: '图书馆', target: '空调用电', value: 400 },
+                    { source: '体育馆', target: '设备用电', value: 300 },
+                    { source: '体育馆', target: '照明用电', value: 200 },
+                    { source: '体育馆', target: '空调用电', value: 250 },
+                    { source: '体育馆', target: '其他用电', value: 50 }
+                ]
+            };
+            
+            chart.setOption({
+                tooltip: { trigger: 'item', triggerOn: 'mousemove' },
+                series: [{
+                    type: 'sankey',
+                    layout: 'none',
+                    emphasis: { focus: 'adjacency' },
+                    nodeAlign: 'justify',
+                    nodeGap: 10,
+                    nodeWidth: 20,
+                    layoutIterations: 0,
+                    data: data.nodes.map(node => ({ name: node.name })),
+                    links: data.links,
+                    lineStyle: {
+                        color: 'gradient',
+                        curveness: 0.5
                     },
-                    yAxis: {
-                        type: 'value',
-                        max: 100,
-                        axisLabel: { color: '#999', formatter: '{value}%' },
-                        splitLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.1)' } }
+                    label: {
+                        show: true,
+                        fontSize: 11,
+                        color: '#fff'
+                    }
+                }]
+            });
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 雷达图 - 校园环境质量分析
+        function initRadarChart() {
+            fetchData('/api/env_radar_analysis', (data) => {
+                const chart = echarts.init(document.getElementById('radar-chart'));
+                chart.setOption({
+                    tooltip: { trigger: 'item' },
+                    legend: { show: false },
+                    radar: {
+                        indicator: data.dimensions.map((dim, i) => ({
+                            name: dim,
+                            max: dim === '温度' ? 40 : dim === '湿度' ? 100 : 
+                                  dim === 'PM2.5' ? 50 : dim === 'PM10' ? 100 :
+                                  dim === 'CO₂' ? 2000 : 100
+                        })),
+                        center: ['50%', '50%'],
+                        radius: '60%',
+                        splitNumber: 4,
+                        axisName: { color: '#999', fontSize: 11 },
+                        splitArea: { areaStyle: { color: ['rgba(59, 130, 246, 0.05)', 'rgba(59, 130, 246, 0.1)'] } },
+                        axisLine: { lineStyle: { color: 'rgba(59, 130, 246, 0.3)' } },
+                        splitLine: { lineStyle: { color: 'rgba(59, 130, 246, 0.2)' } }
                     },
                     series: [{
-                        name: '使用率',
-                        type: 'line',
-                        smooth: true,
-                        data: data.usage_rates,
-                        areaStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                { offset: 0, color: 'rgba(52, 211, 153, 0.4)' },
-                                { offset: 1, color: 'rgba(52, 211, 153, 0.05)' }
-                            ])
-                        },
-                        lineStyle: { color: '#34d399', width: 2 },
-                        itemStyle: { color: '#34d399' }
+                        type: 'radar',
+                        data: [{
+                            value: data.values,
+                            name: '环境质量',
+                            symbol: 'circle',
+                            symbolSize: 6,
+                            lineStyle: { color: '#3b82f6', width: 2 },
+                            areaStyle: { color: 'rgba(59, 130, 246, 0.2)' },
+                            itemStyle: { color: '#3b82f6' }
+                        }]
                     }]
                 });
                 window.addEventListener('resize', () => chart.resize());
             });
         }
 
-        // 环境质量饼图
-        function initEnvironmentChart() {
-            fetchData('/api/environment_quality', (data) => {
-                const chart = echarts.init(document.getElementById('environment-chart'));
-                const colorMap = { '优': '#34d399', '良': '#3b82f6', '差': '#f87171' };
+        // 饼图 - 设备状态统计
+        function initDevicePieChart() {
+            fetchData('/api/device_status_overview', (data) => {
+                const chart = echarts.init(document.getElementById('device-pie-chart'));
+                const colorMap = { '正常': '#34d399', '离线': '#94a3b8', '故障': '#f87171', '维修': '#fbbf24' };
                 chart.setOption({
-                    tooltip: { trigger: 'item', formatter: '{b}: {c}个 ({d}%)' },
+                    tooltip: { trigger: 'item', formatter: '{b}: {c}台 ({d}%)' },
                     legend: {
                         orient: 'vertical',
                         right: '5%',
                         top: 'center',
-                        textStyle: { color: '#999' },
-                        itemWidth: 10,
-                        itemHeight: 10
+                        textStyle: { color: '#fff', fontSize: 12 }
                     },
                     series: [{
                         type: 'pie',
                         radius: ['35%', '60%'],
                         center: ['40%', '50%'],
-                        avoidLabelOverlap: false,
-                        label: { show: false },
-                        emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold' } },
-                        labelLine: { show: false },
-                        data: data.levels.map((level, i) => ({
-                            value: data.counts[i],
-                            name: level,
-                            itemStyle: { color: colorMap[level] }
-                        }))
-                    }]
-                });
-                window.addEventListener('resize', () => chart.resize());
-            });
-        }
-
-        // 楼栋活跃度柱状图
-        function initBuildingChart() {
-            fetchData('/api/building_activity', (data) => {
-                const chart = echarts.init(document.getElementById('building-chart'));
-                chart.setOption({
-                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                    grid: { left: '5%', right: '5%', bottom: '15%', top: '10%', containLabel: true },
-                    xAxis: {
-                        type: 'category',
-                        data: data.buildings,
-                        axisLabel: { color: '#999', rotate: 30, fontSize: 10 },
-                        axisLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.3)' } }
-                    },
-                    yAxis: {
-                        type: 'value',
-                        axisLabel: { color: '#999', formatter: '{value}' },
-                        splitLine: { lineStyle: { color: 'rgba(52, 211, 153, 0.1)' } }
-                    },
-                    series: [{
-                        name: '活跃人次',
-                        type: 'bar',
-                        data: data.activity_counts,
-                        itemStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                { offset: 0, color: '#34d399' },
-                                { offset: 1, color: '#3b82f6' }
-                            ]),
-                            borderRadius: [4, 4, 0, 0]
-                        },
-                        barWidth: '50%'
-                    }]
-                });
-                window.addEventListener('resize', () => chart.resize());
-            });
-        }
-
-        // 设备状态统计图
-        function initDeviceStatsChart() {
-            fetchData('/api/device_stats', (data) => {
-                const chart = echarts.init(document.getElementById('device-stats-chart'));
-                chart.setOption({
-                    tooltip: { trigger: 'item' },
-                    series: [{
-                        type: 'pie',
-                        radius: ['25%', '50%'],
-                        center: ['50%', '50%'],
-                        data: [
-                            { value: data['正常'], name: '正常', itemStyle: { color: '#34d399' } },
-                            { value: data['预警'], name: '预警', itemStyle: { color: '#fbbf24' } },
-                            { value: data['故障'], name: '故障', itemStyle: { color: '#f87171' } }
-                        ],
+                        data: data.data.map(item => ({
+                            value: item.count,
+                            name: item.status,
+                            itemStyle: { color: colorMap[item.status] || '#94a3b8' }
+                        })),
                         label: {
                             show: true,
-                            formatter: '{b}\n{c}台',
+                            formatter: '{c}台',
                             color: '#fff',
-                            fontSize: 11
+                            fontSize: 12
                         },
-                        emphasis: { label: { fontSize: 12, fontWeight: 'bold' } }
+                        emphasis: { label: { fontSize: 14, fontWeight: 'bold' } }
+                    }]
+                });
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        // 柱状图 - 各楼栋活跃度排行
+        function initBuildingBarChart() {
+            fetchData('/api/building_activity_rank?period=day', (data) => {
+                const chart = echarts.init(document.getElementById('building-bar-chart'));
+                chart.setOption({
+                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                    grid: { left: '5%', right: '15%', bottom: '15%', top: '10%', containLabel: true },
+                    xAxis: {
+                        type: 'value',
+                        axisLabel: { color: '#fff', fontSize: 12 },
+                        splitLine: { lineStyle: { color: 'rgba(59, 130, 246, 0.1)' } }
+                    },
+                    yAxis: {
+                        type: 'category',
+                        data: data.buildings.slice(0, 8),
+                        axisLabel: { color: '#fff', fontSize: 12 },
+                        axisLine: { lineStyle: { color: 'rgba(59, 130, 246, 0.3)' } }
+                    },
+                    series: [{
+                        name: '活跃度',
+                        type: 'bar',
+                        data: data.activity_scores.slice(0, 8),
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                { offset: 0, color: '#3b82f6' },
+                                { offset: 1, color: '#60a5fa' }
+                            ]),
+                            borderRadius: [0, 4, 4, 0]
+                        },
+                        barWidth: '60%'
                     }]
                 });
                 window.addEventListener('resize', () => chart.resize());
@@ -567,22 +781,146 @@
 
         // 设备告警表格
         function initAlertTable() {
-            fetchData('/api/device_alerts', (data) => {
+            fetchData('/api/alarm_list', (data) => {
                 const tbody = document.getElementById('alert-table-body');
                 tbody.innerHTML = '';
                 
-                data.alerts.forEach(alert => {
-                    const statusClass = alert.status === '正常' ? 'status-normal' : 
-                                       alert.status === '预警' ? 'status-warning' : 'status-error';
+                data.alarms.slice(0, 10).forEach(alert => {
+                    const levelClass = alert.alarm_level === '正常' ? 'status-normal' : 
+                                       alert.alarm_level === '预警' ? 'status-warning' : 'status-error';
                     
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${alert.device_name}</td>
-                        <td><span class="status-badge ${statusClass}">${alert.status}</span></td>
-                        <td>${alert.alert_message}</td>
+                        <td><span class="status-badge ${levelClass}">${alert.alarm_level}</span></td>
+                        <td>${alert.alarm_message}</td>
                     `;
                     tbody.appendChild(row);
                 });
+            });
+        }
+
+        // 水球图 - 能耗达成率
+        function initLiquidChart() {
+            const chart = echarts.init(document.getElementById('liquid-chart'));
+            chart.setOption({
+                series: [{
+                    type: 'liquidFill',
+                    data: [0.78],
+                    radius: '70%',
+                    center: ['50%', '50%'],
+                    waveAnimation: true,
+                    waveLength: '80%',
+                    waveDirection: 'right',
+                    shape: 'circle',
+                    label: {
+                        show: true,
+                        position: 'inside',
+                        fontSize: 28,
+                        fontWeight: 'bold',
+                        color: '#fff',
+                        formatter: '{c}%'
+                    },
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(59, 130, 246, 0.8)' },
+                            { offset: 1, color: 'rgba(96, 165, 250, 0.4)' }
+                        ])
+                    }
+                }]
+            });
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 堆叠柱状图 - 能耗统计指标
+        function initEnergyBarChart() {
+            fetchData('/api/energy_stat_data?period=day', (data) => {
+                const chart = echarts.init(document.getElementById('energy-bar-chart'));
+                chart.setOption({
+                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                    legend: {
+                        data: ['设备用电', '公共区域用电'],
+                        textStyle: { color: '#fff', fontSize: 12 },
+                        top: '5%',
+                        right: '5%'
+                    },
+                    grid: { left: '5%', right: '5%', bottom: '15%', top: '15%', containLabel: true },
+                    xAxis: {
+                        type: 'category',
+                        data: data.time_labels.slice(-12),
+                        axisLabel: { color: '#fff', rotate: 30, fontSize: 11 },
+                        axisLine: { lineStyle: { color: 'rgba(59, 130, 246, 0.3)' } }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLabel: { color: '#fff', fontSize: 12 },
+                        splitLine: { lineStyle: { color: 'rgba(59, 130, 246, 0.1)' } }
+                    },
+                    series: [
+                        {
+                            name: '设备用电',
+                            type: 'bar',
+                            stack: 'total',
+                            data: data.device_electric.slice(-12),
+                            itemStyle: { color: '#34d399', borderRadius: [0, 0, 4, 4] }
+                        },
+                        {
+                            name: '公共区域用电',
+                            type: 'bar',
+                            stack: 'total',
+                            data: data.public_electric.slice(-12),
+                            itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] }
+                        }
+                    ]
+                });
+                window.addEventListener('resize', () => chart.resize());
+            });
+        }
+
+        // 仪表盘 - 实时监测仪表盘
+        function initGaugeChart() {
+            fetchData('/api/env_realtime_data', (data) => {
+                const chart = echarts.init(document.getElementById('gauge-chart'));
+                
+                const gaugeData = [
+                    { value: data.avg_temperature, name: '温度', unit: '°C', max: 40 },
+                    { value: data.avg_humidity, name: '湿度', unit: '%', max: 100 },
+                    { value: data.devices[0]?.pm25 || 25, name: 'PM2.5', unit: 'μg/m³', max: 50 },
+                    { value: data.devices[0]?.noise || 45, name: '噪音', unit: 'dB', max: 100 }
+                ];
+                
+                const series = gaugeData.map((item, index) => ({
+                    type: 'gauge',
+                    startAngle: 225,
+                    endAngle: -45,
+                    min: 0,
+                    max: item.max,
+                    splitNumber: 5,
+                    axisLine: {
+                        lineStyle: {
+                            width: 8,
+                            color: [[0.3, '#34d399'], [0.7, '#3b82f6'], [1, '#f87171']]
+                        }
+                    },
+                    pointer: { length: '60%', width: 2 },
+                    axisTick: { show: false },
+                    splitLine: { length: 8, lineStyle: { color: '#999', width: 1 } },
+                    axisLabel: { color: '#999', fontSize: 10, distance: 12 },
+                    detail: {
+                        fontSize: 16,
+                        fontWeight: 'bold',
+                        color: '#fff',
+                        formatter: `{value}${item.unit}`,
+                        offsetCenter: [0, '70%']
+                    },
+                    title: { fontSize: 12, color: '#999', offsetCenter: [0, '90%'] },
+                    data: [{ value: item.value, name: item.name }],
+                    center: [`${25 * index + 12.5}%`, '50%'],
+                    radius: '45%'
+                }));
+                
+                chart.setOption({ series });
+                window.addEventListener('resize', () => chart.resize());
             });
         }
 
@@ -596,17 +934,18 @@
             const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
             const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
             
-            // 场景设置
+            // 场景设置 - 暗色背景
             const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a1018);
             
-            // 相机设置
+            // 相机设置 - 视角更近
             const camera = new THREE.PerspectiveCamera(
-                45,
+                50,
                 container.clientWidth / container.clientHeight,
                 0.1,
                 1000
             );
-            camera.position.set(5, 5, 5);
+            camera.position.set(4, 4, 4);  // 更近的视角
             
             // 渲染器设置
             const renderer = new THREE.WebGLRenderer({
@@ -618,33 +957,189 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.shadowMap.enabled = true;
             
-            // 控制器
-            const controls = new OrbitControls(camera, renderer.domElement);
+            // 控制器 - 绑定到中间center-area，让用户可以在中间区域操作3D模型
+            const centerArea = document.getElementById('center-area');
+            const controls = new OrbitControls(camera, centerArea);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.minDistance = 2;
-            controls.maxDistance = 20;
+            controls.minDistance = 1.5;
+            controls.maxDistance = 15;
             controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.5;
+            controls.autoRotateSpeed = 0.8;
             
-            // 光照设置
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
+            // 光照设置 - 优化灯光配置
+            // 主半球光 - 提供自然的天空/地面光照
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf0f0f0, 1.0);
+            scene.add(hemiLight);
             
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(5, 10, 5);
-            directionalLight.castShadow = true;
-            scene.add(directionalLight);
+            // 主方向光 - 类似太阳光
+            const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            mainLight.position.set(10, 15, 10);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            mainLight.shadow.camera.near = 0.5;
+            mainLight.shadow.camera.far = 50;
+            mainLight.shadow.camera.left = -15;
+            mainLight.shadow.camera.right = 15;
+            mainLight.shadow.camera.top = 15;
+            mainLight.shadow.camera.bottom = -15;
+            scene.add(mainLight);
+            
+            // 补光 - 填充阴影区域
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            fillLight.position.set(-5, 5, -5);
+            scene.add(fillLight);
+            
+            // 背光 - 增加轮廓感
+            const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            backLight.position.set(-5, 5, -10);
+            scene.add(backLight);
             
             // 添加辅助网格
-            const gridHelper = new THREE.GridHelper(10, 20, 0x34d399, 0x1b263b);
+            const gridHelper = new THREE.GridHelper(10, 20, 0x495057, 0x1a1f2e);
             gridHelper.position.y = -0.01;
             scene.add(gridHelper);
             
             // 加载GLB模型
             const loader = new GLTFLoader();
+            let buildingMeshes = [];
+            let selectedMesh = null;
+            let originalMaterials = {};
+            
+            // 建筑数据
+            const buildingData = {
+                '博文楼': {
+                    name: '博文楼',
+                    type: '教学建筑',
+                    area: '12000平方米',
+                    floors: '6层',
+                    desc: '博文楼是学校主要的教学楼之一，拥有现代化的教学设施和舒适的学习环境。'
+                },
+                '博远楼': {
+                    name: '博远楼',
+                    type: '教学建筑',
+                    area: '15000平方米',
+                    floors: '8层',
+                    desc: '博远楼是学校最大的教学楼，设有各类专业教室和先进的教学设备。'
+                },
+                '腾踏学生公寓': {
+                    name: '腾踏学生公寓',
+                    type: '学生宿舍',
+                    area: '8000平方米',
+                    floors: '6层',
+                    desc: '腾踏学生公寓为学生提供舒适的住宿环境，配备独立卫生间和空调。'
+                },
+                '汇华学生公寓': {
+                    name: '汇华学生公寓',
+                    type: '学生宿舍',
+                    area: '9000平方米',
+                    floors: '6层',
+                    desc: '汇华学生公寓环境整洁，生活设施齐全，是学生温馨的家。'
+                },
+                '弘毅学生公寓': {
+                    name: '弘毅学生公寓',
+                    type: '学生宿舍',
+                    area: '7500平方米',
+                    floors: '5层',
+                    desc: '弘毅学生公寓以"弘毅"命名，培养学生坚毅的品格和远大的志向。'
+                },
+                '景新学生公寓': {
+                    name: '景新学生公寓',
+                    type: '学生宿舍',
+                    area: '8500平方米',
+                    floors: '6层',
+                    desc: '景新学生公寓设施新颖，环境优美，为学生提供良好的生活空间。'
+                },
+                '景明学生公寓': {
+                    name: '景明学生公寓',
+                    type: '学生宿舍',
+                    area: '8200平方米',
+                    floors: '6层',
+                    desc: '景明学生公寓采光良好，视野开阔，营造明亮舒适的居住环境。'
+                },
+                '博雅学生公寓': {
+                    name: '博雅学生公寓',
+                    type: '学生宿舍',
+                    area: '7800平方米',
+                    floors: '5层',
+                    desc: '博雅学生公寓注重培养学生的人文素养和高雅情操。'
+                },
+                '明德楼': {
+                    name: '明德楼',
+                    type: '行政办公',
+                    area: '6000平方米',
+                    floors: '5层',
+                    desc: '明德楼是学校行政管理中心，设有校长办公室和各职能部门。'
+                },
+                '图书馆': {
+                    name: '图书馆',
+                    type: '图书信息',
+                    area: '10000平方米',
+                    floors: '4层',
+                    desc: '图书馆拥有丰富的藏书资源和舒适的阅读空间，提供各类学术文献。'
+                },
+                '学生活动中心': {
+                    name: '学生活动中心',
+                    type: '文体活动',
+                    area: '5000平方米',
+                    floors: '3层',
+                    desc: '学生活动中心是学生社团活动和文体赛事的重要场所。'
+                },
+                '工程实训楼': {
+                    name: '工程实训楼',
+                    type: '实践教学',
+                    area: '9000平方米',
+                    floors: '4层',
+                    desc: '工程实训楼配备各类专业实验设备，为学生提供实践教学平台。'
+                },
+                '任美福楼': {
+                    name: '任美福楼',
+                    type: '科研实验',
+                    area: '7000平方米',
+                    floors: '5层',
+                    desc: '任美福楼是学校重要的科研实验楼，支持各类科研项目开展。'
+                },
+                '工学楼': {
+                    name: '工学楼',
+                    type: '教学建筑',
+                    area: '11000平方米',
+                    floors: '6层',
+                    desc: '工学楼是工科专业的主要教学场所，配备先进的实验室设施。'
+                },
+                '生科楼': {
+                    name: '生科楼',
+                    type: '科研实验',
+                    area: '8500平方米',
+                    floors: '5层',
+                    desc: '生科楼是生命科学学院的教学科研基地，拥有各类生物实验室。'
+                },
+                '体育馆': {
+                    name: '体育馆',
+                    type: '体育设施',
+                    area: '12000平方米',
+                    floors: '3层',
+                    desc: '体育馆配备现代化体育设施，是师生进行体育锻炼的重要场所。'
+                },
+                '文鼎楼': {
+                    name: '文鼎楼',
+                    type: '教学建筑',
+                    area: '10000平方米',
+                    floors: '7层',
+                    desc: '文鼎楼以文化传承为主题，是人文社科类专业的教学基地。'
+                }
+            };
+            
+            // 可交互建筑名称列表
+            const interactiveBuildings = [
+                '博文楼', '博远楼', '腾踏学生公寓', '汇华学生公寓', 
+                '弘毅学生公寓', '景新学生公寓', '景明学生公寓', '博雅学生公寓',
+                '明德楼', '图书馆', '学生活动中心', '工程实训楼', 
+                '任美福楼', '工学楼', '生科楼', '体育馆', '文鼎楼'
+            ];
+            
             loader.load(
-                '/校园模型.glb',
+                '/campus-model-2?v=' + Date.now(),
                 (gltf) => {
                     const model = gltf.scene;
                     
@@ -661,9 +1156,45 @@
                     model.position.y = -center.y * scale + 0.5;
                     model.position.z = -center.z * scale;
                     
+                    // 收集建筑物mesh并设置可点击（仅指定建筑）
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            // 打印所有mesh名称，方便调试
+                            console.log('发现mesh:', child.name);
+                            
+                            const meshName = child.name.toLowerCase();
+                            let matchedBuilding = null;
+                            
+                            // 检查是否匹配可交互建筑列表
+                            for (const buildingName of interactiveBuildings) {
+                                const lowerBuildingName = buildingName.toLowerCase();
+                                if (meshName.includes(lowerBuildingName) || 
+                                    lowerBuildingName.includes(meshName)) {
+                                    matchedBuilding = buildingName;
+                                    break;
+                                }
+                            }
+                            
+                            if (matchedBuilding) {
+                                child.userData.buildingName = matchedBuilding;
+                                buildingMeshes.push(child);
+                                
+                                // 缓存原始材质
+                                originalMaterials[child.uuid] = {
+                                    material: child.material.clone ? child.material.clone() : child.material,
+                                    visible: child.visible
+                                };
+                                
+                                // 开启阴影
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        }
+                    });
+                    
                     scene.add(model);
                     document.getElementById('loading').style.display = 'none';
-                    console.log('模型加载成功');
+                    console.log('模型加载成功，找到', buildingMeshes.length, '栋可交互建筑');
                 },
                 (progress) => {
                     console.log('加载进度:', (progress.loaded / progress.total * 100) + '%');
@@ -673,6 +1204,151 @@
                     document.getElementById('loading').querySelector('.loading-text').textContent = '模型加载失败';
                 }
             );
+            
+            // 射线检测器
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            let hoveredMesh = null;
+            let isModalVisible = false;
+            
+            // 点击事件处理 - 点击交互
+            centerArea.addEventListener('click', (event) => {
+                // 计算鼠标在归一化设备坐标中的位置
+                const rect = centerArea.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                
+                // 更新射线
+                raycaster.setFromCamera(mouse, camera);
+                
+                // 检测与建筑物的交点
+                const intersects = raycaster.intersectObjects(buildingMeshes);
+                
+                if (intersects.length > 0) {
+                    const clickedMesh = intersects[0].object;
+                    
+                    // 如果点击的是另一栋建筑，先恢复之前的
+                    if (hoveredMesh && hoveredMesh !== clickedMesh) {
+                        restoreMaterial(hoveredMesh);
+                    }
+                    
+                    // 高亮并显示详情
+                    hoveredMesh = clickedMesh;
+                    highlightBuilding(hoveredMesh);
+                    showBuildingInfo(hoveredMesh.userData.buildingName);
+                    updateModalPosition(event);
+                    isModalVisible = true;
+                } else {
+                    // 点击空白处，恢复并隐藏
+                    if (hoveredMesh) {
+                        restoreMaterial(hoveredMesh);
+                        hoveredMesh = null;
+                    }
+                    hideModal();
+                    isModalVisible = false;
+                }
+            });
+            
+            // 点击空白处隐藏弹窗
+            centerArea.addEventListener('mousemove', (event) => {
+                if (isModalVisible && !hoveredMesh) {
+                    // 检查是否在弹窗内
+                    const modal = document.getElementById('building-modal');
+                    const rect = modal.getBoundingClientRect();
+                    if (event.clientX < rect.left || event.clientX > rect.right ||
+                        event.clientY < rect.top || event.clientY > rect.bottom) {
+                        // 鼠标不在弹窗内，隐藏
+                        hideModal();
+                        isModalVisible = false;
+                    }
+                }
+            });
+            
+            // 更新弹窗位置
+            function updateModalPosition(event) {
+                const modal = document.getElementById('building-modal');
+                const padding = 15;
+                
+                let left = event.clientX + padding;
+                let top = event.clientY + padding;
+                
+                // 确保弹窗不超出屏幕
+                if (left + 280 > window.innerWidth) {
+                    left = event.clientX - 280 - padding;
+                }
+                if (top + 350 > window.innerHeight) {
+                    top = event.clientY - 350 - padding;
+                }
+                
+                modal.style.left = left + 'px';
+                modal.style.top = top + 'px';
+            }
+            
+            // 高亮建筑 - 蓝色发光
+            function highlightBuilding(mesh) {
+                if (originalMaterials[mesh.uuid]) {
+                    const origMat = originalMaterials[mesh.uuid].material;
+                    let newMaterial;
+                    
+                    if (origMat.clone) {
+                        newMaterial = origMat.clone();
+                    } else {
+                        newMaterial = new THREE.MeshStandardMaterial({
+                            color: origMat.color || 0xffffff,
+                            emissive: new THREE.Color(0x3b82f6),
+                            emissiveIntensity: 0.6,
+                            transparent: true,
+                            opacity: 0.95
+                        });
+                    }
+                    
+                    if (newMaterial.emissive !== undefined) {
+                        newMaterial.emissive = new THREE.Color(0x3b82f6);
+                        newMaterial.emissiveIntensity = 0.6;
+                    }
+                    newMaterial.transparent = true;
+                    newMaterial.opacity = 0.95;
+                    
+                    mesh.material = newMaterial;
+                }
+            }
+            
+            // 恢复材质
+            function restoreMaterial(mesh) {
+                if (originalMaterials[mesh.uuid]) {
+                    const origMat = originalMaterials[mesh.uuid].material;
+                    if (origMat.clone) {
+                        mesh.material = origMat.clone();
+                    } else {
+                        mesh.material = origMat;
+                    }
+                    mesh.visible = originalMaterials[mesh.uuid].visible;
+                }
+            }
+            
+            // 显示建筑详情
+            function showBuildingInfo(buildingName) {
+                const data = buildingData[buildingName];
+                if (data) {
+                    document.getElementById('building-name').textContent = data.name;
+                    document.getElementById('building-type').textContent = data.type;
+                    document.getElementById('building-area').textContent = data.area;
+                    document.getElementById('building-floors').textContent = data.floors;
+                    document.getElementById('building-desc').textContent = data.desc;
+                } else {
+                    document.getElementById('building-name').textContent = buildingName;
+                    document.getElementById('building-type').textContent = '校园建筑';
+                    document.getElementById('building-area').textContent = '待统计';
+                    document.getElementById('building-floors').textContent = '待统计';
+                    document.getElementById('building-desc').textContent = '该建筑详细信息正在完善中。';
+                }
+                document.getElementById('building-modal').classList.add('show');
+            }
+            
+            // 隐藏弹窗
+            function hideModal() {
+                document.getElementById('building-modal').classList.remove('show');
+            }
             
             // 动画循环
             function animate() {
@@ -692,18 +1368,28 @@
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', () => {
+            // 先初始化所有图表
             initOverview();
-            initClassroomChart();
-            initEnvironmentChart();
-            initBuildingChart();
-            initDeviceStatsChart();
+            initSankeyChart();
+            initRadarChart();
+            initDevicePieChart();
+            initBuildingBarChart();
             initAlertTable();
-            init3DModel();
+            initLiquidChart();
+            initEnergyBarChart();
+            initGaugeChart();
+            
+            // 3D模型异步加载，失败不影响其他功能
+            init3DModel().catch(e => {
+                console.error('3D模型加载失败:', e);
+                document.getElementById('model-container').style.display = 'none';
+            });
             
             // 每30秒刷新数据
             setInterval(() => {
                 initOverview();
                 initAlertTable();
+                initGaugeChart();
             }, 30000);
         });
     </script>
